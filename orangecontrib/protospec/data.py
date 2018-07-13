@@ -25,7 +25,12 @@ def _as_table(spec_from_img):
         return ret_data
 
 
-class agilentMosaicTileReader(FileFormat):
+class TileFileFormat:
+    def read(self):
+        return self.read_tile()
+
+
+class agilentMosaicTileReader(FileFormat, TileFileFormat):
     """ Tile-by-tile reader for Agilent FPA mosaic image files"""
     EXTENSIONS = ('.dmt',)
     DESCRIPTION = 'Agilent Mosaic Tile-by-tile'
@@ -38,7 +43,7 @@ class agilentMosaicTileReader(FileFormat):
         return cut(table)
 
 
-    def read(self):
+    def read_tile(self):
         ret_table = None
         am = agilentMosaicTiles(self.filename)
         info = am.info
