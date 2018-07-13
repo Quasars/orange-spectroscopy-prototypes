@@ -82,6 +82,8 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
             if ret_table is None:
                 ret_table = tile_table
             else:
+                # fail early for domain-problematic preprocessors
+                assert ret_table.domain == tile_table.domain
                 ret_table.extend(tile_table)
 
         return ret_table

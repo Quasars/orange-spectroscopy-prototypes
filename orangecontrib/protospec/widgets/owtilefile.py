@@ -82,10 +82,13 @@ def _get_reader(rp):
 
 if __name__ == "__main__":
     import sys
-    from orangecontrib.spectroscopy.preprocess import Cut
+    from orangecontrib.spectroscopy.preprocess import Cut, LinearBaseline
+    from Orange.preprocess.preprocess import PreprocessorList
     import orangecontrib.protospec #load readers
     a = QApplication(sys.argv)
-    preproc = Cut(lowlim=2000, highlim=2006)
+    # preproc = PreprocessorList([Cut(lowlim=2000, highlim=2006), LinearBaseline()])
+    preproc = PreprocessorList([LinearBaseline(), Cut(lowlim=2000, highlim=2006)])
+    # preproc = PreprocessorList([Cut(lowlim=2000, highlim=2006), Cut(lowlim=2002, highlim=2006)])
     ow = OWTilefile()
     ow.update_preprocessor(preproc)
     ow.show()
