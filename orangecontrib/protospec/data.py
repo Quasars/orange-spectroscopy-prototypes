@@ -35,12 +35,18 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
     EXTENSIONS = ('.dmt',)
     DESCRIPTION = 'Agilent Mosaic Tile-by-tile'
 
+    def __init__(self, filename):
+        super().__init__(filename)
+        self.preprocessor = None
+
+    def set_preprocessor(self, preprocessor):
+        self.preprocessor = preprocessor
+
     def preprocess(self, table):
-        """
-        replace with preprocessor chain input
-        """
-        cut = Cut(lowlim=2000, highlim=2006)
-        return cut(table)
+        if self.preprocessor is not None:
+            return self.preprocessor(table)
+        else:
+            return table
 
 
     def read_tile(self):
