@@ -29,9 +29,4 @@ class TestTilePreprocessors(unittest.TestCase):
         reader = FileFormat.get_reader(path)
         for p in PREPROCESSORS_INDEPENDENT_SAMPLES:
             reader.set_preprocessor(p)
-            try:
-                reader.read()
-            except AssertionError as e:
-                print("Domain error:", p, e)
-            else:
-                print("OK", p)
+            reader.read()

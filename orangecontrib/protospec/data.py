@@ -81,9 +81,14 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
 
             if ret_table is None:
                 ret_table = tile_table
+                domain = ret_table.domain
             else:
-                # fail early for domain-problematic preprocessors
-                assert ret_table.domain == tile_table.domain
-                ret_table.extend(tile_table)
+                # brute-force concatenate since domains must be the same
+                # from Table.extend()
+                ret_table.X = np.vstack((ret_table.X, tile_table.X))
+                ret_table._Y = np.vstack((ret_table._Y, tile_table._Y))
+                ret_table.metas = np.vstack((ret_table.metas, tile_table.metas))
+                ret_table.W = np.vstack((ret_table.W, tile_table.W))
+                ret_table.ids = np.hstack((ret_table.ids, tile_table.ids))
 
         return ret_table
