@@ -18,6 +18,8 @@ class OWTilefile(owfile.OWFile):
                   "preprocess, and send a data table to the output."
     priority = 10000
 
+    SIZE_LIMIT = 0
+
     # Overload RecentPathsWidgetMixin.recent_paths to set defaults
     recent_paths = Setting([
         RecentPath("", "sample-datasets", "agilent/5_mosaic_agg1024.dmt"),
