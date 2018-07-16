@@ -4,7 +4,7 @@ from AnyQt.QtCore import Qt
 from AnyQt.QtWidgets import QApplication
 
 from Orange.data.io import FileFormat, UrlReader, class_from_qualified_name
-from Orange.preprocess.preprocess import Preprocess
+from Orange.preprocess.preprocess import Preprocess, PreprocessorList
 from Orange.widgets import gui
 from Orange.widgets.data import owfile
 from Orange.widgets.settings import Setting
@@ -30,6 +30,10 @@ class OWTilefile(owfile.OWFile):
     class Inputs:
         preprocessor = Input("Preprocessor", Preprocess)
 
+    class Warning(owfile.OWFile.Warning):
+        no_preprocessor = Msg("No preprocessor on input."
+                              " Press Reload to load anyway.")
+
     class Error(owfile.OWFile.Error):
         missing_reader = Msg("No tile-by-tile reader for this file.")
 
@@ -40,11 +44,19 @@ class OWTilefile(owfile.OWFile):
         box = gui.vBox(self.controlArea, "Preprocessor")
         self.info_preproc = gui.widgetLabel(box, 'No preprocessor on input.')
 
+    @staticmethod
+    def _is_preproc(p):
+        """
+        Tests that a preprocessor is not None or empty PreprocessorList
+        """
+        return not(p is None or (isinstance(p, PreprocessorList) and len(p.preprocessors) == 0))
 
     @Inputs.preprocessor
     def update_preprocessor(self, preproc):
-        if preproc is None:
+        self.Warning.no_preprocessor.clear()
+        if not self._is_preproc(preproc):
             self.info_preproc.setText("No preprocessor on input.")
+            self.Warning.no_preprocessor()
         elif self.preprocessor is not preproc:
             self.info_preproc.setText("New preprocessor, reload file to use.\n{0}".format(preproc))
         self.preprocessor = preproc
@@ -70,6 +82,9 @@ class OWTilefile(owfile.OWFile):
             self.recent_paths[0].file_format = reader.qualified_name()
 
         self.source = self.LOCAL_FILE
+
+        if not self._is_preproc(self.preprocessor):
+            return self.Warning.no_preprocessor()
         self.load_data()
 
     def _get_reader(self):
