@@ -7,7 +7,7 @@ from Orange.widgets import gui
 from Orange.widgets.data import owfile
 from Orange.widgets.settings import Setting
 from Orange.widgets.utils.filedialogs import RecentPath
-from Orange.widgets.widget import Input
+from Orange.widgets.widget import Input, Msg
 
 
 class OWTilefile(owfile.OWFile):
@@ -27,6 +27,9 @@ class OWTilefile(owfile.OWFile):
 
     class Inputs:
         preprocessor = Input("Preprocessor", Preprocess)
+
+    class Error(owfile.OWFile.Error):
+        missing_reader = Msg("No tile-by-tile reader for this file.")
 
     def __init__(self):
         self.preprocessor = None
@@ -50,9 +53,6 @@ class OWTilefile(owfile.OWFile):
         -------
         FileFormat
         """
-        # from AnyQt.QtCore import pyqtRemoveInputHook
-        # pyqtRemoveInputHook()
-        # import pdb; pdb.set_trace()
         if self.source == self.LOCAL_FILE:
             path = self.last_path()
             if self.recent_paths and self.recent_paths[0].file_format:
@@ -64,22 +64,18 @@ class OWTilefile(owfile.OWFile):
             if self.recent_paths and self.recent_paths[0].sheet:
                 reader.select_sheet(self.recent_paths[0].sheet)
             # set preprocessor here
-            if self.preprocessor is not None and hasattr(reader, "read_tile"):
+            if hasattr(reader, "read_tile"):
                 reader.set_preprocessor(self.preprocessor)
-                self.info_preproc.setText(str(self.preprocessor))
+                if self.preprocessor is not None:
+                    self.info_preproc.setText(str(self.preprocessor))
+            else:
+                # only allow readers with tile-by-tile support to run.
+                reader = None
             return reader
         elif self.source == self.URL:
             url = self.url_combo.currentText().strip()
             if url:
                 return UrlReader(url)
-
-
-def _get_reader(rp):
-    if rp.file_format:
-        reader_class = class_from_qualified_name(rp.file_format)
-        return reader_class(rp.abspath)
-    else:
-        return FileFormat.get_reader(rp.abspath)
 
 
 if __name__ == "__main__":
