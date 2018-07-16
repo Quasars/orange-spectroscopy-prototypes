@@ -1,3 +1,5 @@
+import os
+
 from AnyQt.QtCore import Qt
 from AnyQt.QtWidgets import QApplication
 
@@ -6,7 +8,7 @@ from Orange.preprocess.preprocess import Preprocess
 from Orange.widgets import gui
 from Orange.widgets.data import owfile
 from Orange.widgets.settings import Setting
-from Orange.widgets.utils.filedialogs import RecentPath
+from Orange.widgets.utils.filedialogs import RecentPath, open_filename_dialog
 from Orange.widgets.widget import Input, Msg
 
 
@@ -46,6 +48,29 @@ class OWTilefile(owfile.OWFile):
         elif self.preprocessor is not preproc:
             self.info_preproc.setText("New preprocessor, reload file to use.\n{0}".format(preproc))
         self.preprocessor = preproc
+
+    def browse_file(self, in_demos=False):
+        if in_demos:
+            start_file = get_sample_datasets_dir()
+            if not os.path.exists(start_file):
+                QMessageBox.information(
+                    None, "File",
+                    "Cannot find the directory with documentation datasets")
+                return
+        else:
+            start_file = self.last_path() or os.path.expanduser("~/")
+
+        readers = [f for f in FileFormat.formats
+                   if getattr(f, 'read_tile', None) and getattr(f, "EXTENSIONS", None)]
+        filename, reader, _ = open_filename_dialog(start_file, None, readers)
+        if not filename:
+            return
+        self.add_path(filename)
+        if reader is not None:
+            self.recent_paths[0].file_format = reader.qualified_name()
+
+        self.source = self.LOCAL_FILE
+        self.load_data()
 
     def _get_reader(self):
         """
