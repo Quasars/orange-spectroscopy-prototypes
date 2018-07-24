@@ -9,22 +9,6 @@ from orangecontrib.spectroscopy.preprocess import Cut
 from .agilent import agilentMosaicTiles
 
 
-def _as_table(spec_from_img):
-    domvals, data, additional_table = spec_from_img
-    data = np.asarray(data, dtype=np.float64)  # Orange assumes X to be float64
-    features = [Orange.data.ContinuousVariable.make("%f" % f) for f in domvals]
-    if additional_table is None:
-        domain = Orange.data.Domain(features, None)
-        return Orange.data.Table(domain, data)
-    else:
-        domain = Orange.data.Domain(features,
-                                    class_vars=additional_table.domain.class_vars,
-                                    metas=additional_table.domain.metas)
-        ret_data = additional_table.transform(domain)
-        ret_data.X = data
-        return ret_data
-
-
 class TileFileFormat:
     def read(self):
         return self.read_tile()
@@ -63,6 +47,12 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
             #just start counting from 0 when nothing is known
             features = np.arange(X.shape[-1])
 
+        attrs = [Orange.data.ContinuousVariable.make("%f" % f) for f in features]
+        domain = Orange.data.Domain(attrs, None,
+                                    metas=[Orange.data.ContinuousVariable.make("map_x"),
+                                           Orange.data.ContinuousVariable.make("map_y")]
+                                    )
+
         try:
             px_size = info['FPA Pixel Size'] * info['PixelAggregationSize']
         except KeyError:
@@ -76,19 +66,14 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
             x_locs = np.linspace(x*x_size*px_size, (x+1)*x_size*px_size, num=x_size, endpoint=False)
             y_locs = np.linspace((ytiles-y-1)*y_size*px_size, (ytiles-y)*y_size*px_size, num=y_size, endpoint=False)
 
-            tile_table = _as_table(_spectra_from_image(tile, features, x_locs, y_locs))
-            tile_table = self.preprocess(tile_table)
+            _, data, additional_table = _spectra_from_image(tile, None, x_locs, y_locs)
+            data = np.asarray(data, dtype=np.float64)  # Orange assumes X to be float64
+            tile_table = Orange.data.Table.from_numpy(domain, X=data, metas=additional_table.metas)
 
             if ret_table is None:
-                ret_table = tile_table
-                domain = ret_table.domain
+                ret_table = self.preprocess(tile_table)
             else:
-                # brute-force concatenate since domains must be the same
-                # from Table.extend()
-                ret_table.X = np.vstack((ret_table.X, tile_table.X))
-                ret_table._Y = np.vstack((ret_table._Y, tile_table._Y))
-                ret_table.metas = np.vstack((ret_table.metas, tile_table.metas))
-                ret_table.W = np.vstack((ret_table.W, tile_table.W))
-                ret_table.ids = np.hstack((ret_table.ids, tile_table.ids))
+                t_table = tile_table.transform(ret_table.domain)
+                ret_table.extend(t_table)
 
         return ret_table
