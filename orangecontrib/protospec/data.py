@@ -10,8 +10,26 @@ from .agilent import agilentMosaicTiles
 
 
 class TileFileFormat:
+
+    def read_tile(self):
+        """ Read file in chunks (tiles) to allow preprocessing before combining
+        into one large Table.
+
+        Return a generator of Tables, where each Table is a chunk of the total.
+        Tables should already have appropriate meta-data (i.e. map_x/map_y)
+        """
+        pass
+
     def read(self):
-        return self.read_tile()
+        ret_table = None
+        for tile_table in self.read_tile():
+            if ret_table is None:
+                ret_table = self.preprocess(tile_table)
+            else:
+                tile_table_pp = tile_table.transform(ret_table.domain)
+                ret_table.extend(tile_table_pp)
+
+        return ret_table
 
 
 class agilentMosaicTileReader(FileFormat, TileFileFormat):
@@ -69,11 +87,4 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
             _, data, additional_table = _spectra_from_image(tile, None, x_locs, y_locs)
             data = np.asarray(data, dtype=np.float64)  # Orange assumes X to be float64
             tile_table = Orange.data.Table.from_numpy(domain, X=data, metas=additional_table.metas)
-
-            if ret_table is None:
-                ret_table = self.preprocess(tile_table)
-            else:
-                t_table = tile_table.transform(ret_table.domain)
-                ret_table.extend(t_table)
-
-        return ret_table
+            yield tile_table
