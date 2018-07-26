@@ -28,6 +28,8 @@ After the installation, the widgets from this add-on are registered with
 Orange. The new widgets will appear in Orange Canvas, in the toolbox bar
 under the section Spectroscopy-Prototypes.
 
+Example workflows can be found under the "Help / Examples" menu.
+
 For developers
 --------------
 
