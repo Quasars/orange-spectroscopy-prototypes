@@ -11,6 +11,8 @@ from Orange.widgets.settings import Setting
 from Orange.widgets.utils.filedialogs import RecentPath, open_filename_dialog
 from Orange.widgets.widget import Input, Msg
 
+from orangecontrib.spectroscopy import get_sample_datasets_dir
+
 
 class OWTilefile(owfile.OWFile):
     name = "Tile File"
@@ -20,6 +22,7 @@ class OWTilefile(owfile.OWFile):
                   "preprocess, and send a data table to the output."
     priority = 10000
 
+    SEARCH_PATHS = [("sample-datasets", get_sample_datasets_dir())]
     SIZE_LIMIT = 0
 
     # Overload RecentPathsWidgetMixin.recent_paths to set defaults
