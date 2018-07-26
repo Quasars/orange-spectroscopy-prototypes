@@ -1,10 +1,8 @@
-[![DOI](https://zenodo.org/badge/53335377.svg)](https://zenodo.org/badge/latestdoi/53335377)
-
 orange-spectroscopy-prototypes
 ==============================
 
 Prototype widgets / code for the [orange-spectroscopy](https://github.com/Quasars/orange-spectroscopy)
-add-on for [Orange3](http://orange.biolab.si) for the analysis of spectral data.
+add-on for [Orange3](http://orange.biolab.si).
 
 Installation
 ------------
@@ -16,7 +14,12 @@ To use this add-on, first download and install the current version of
 2. A new window will open. There, tick the checkbox in front of "Spectroscopy" and confirm.
 3. Restart Orange.
 
-Finally, install the prototypes add-on as in [For developers](#For developers).
+Finally, install the prototypes add-on:
+
+1. Download and unzip the release zip file.
+2. Enter the folder in your python environment. For a standard Orange
+   install you should use "Orange Command Prompt"
+3. Run `pip install .` from the folder.
 
 Usage
 -----
