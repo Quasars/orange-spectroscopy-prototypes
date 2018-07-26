@@ -78,7 +78,6 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
             px_size = 1
 
         for (x, y) in np.ndindex(tiles.shape):
-            print(x,y)
             tile = tiles[x, y]()
             x_size, y_size = tile.shape[1], tile.shape[0]
             x_locs = np.linspace(x*x_size*px_size, (x+1)*x_size*px_size, num=x_size, endpoint=False)
