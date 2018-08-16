@@ -54,6 +54,16 @@ class OWTilefile(owfile.OWFile):
         """
         return not(p is None or (isinstance(p, PreprocessorList) and len(p.preprocessors) == 0))
 
+    @staticmethod
+    def _format_preproc_str(p):
+        pstring = str()
+        if isinstance(p, PreprocessorList):
+            for preproc in p.preprocessors:
+                pstring += "\n{0}".format(preproc)
+        else:
+            pstring = str(p)
+        return pstring
+
     @Inputs.preprocessor
     def update_preprocessor(self, preproc):
         self.Warning.no_preprocessor.clear()
@@ -61,7 +71,8 @@ class OWTilefile(owfile.OWFile):
             self.info_preproc.setText("No preprocessor on input.")
             self.Warning.no_preprocessor()
         elif self.preprocessor is not preproc:
-            self.info_preproc.setText("New preprocessor, reload file to use.\n{0}".format(preproc))
+            self.info_preproc.setText("New preprocessor, reload file to use." +
+                self._format_preproc_str(preproc))
         self.preprocessor = preproc
 
     def browse_file(self, in_demos=False):
@@ -110,7 +121,8 @@ class OWTilefile(owfile.OWFile):
             if hasattr(reader, "read_tile"):
                 reader.set_preprocessor(self.preprocessor)
                 if self.preprocessor is not None:
-                    self.info_preproc.setText(str(self.preprocessor))
+                    self.info_preproc.setText(
+                        self._format_preproc_str(self.preprocessor).lstrip("\n"))
             else:
                 # only allow readers with tile-by-tile support to run.
                 reader = None
@@ -130,6 +142,9 @@ if __name__ == "__main__":
     # preproc = PreprocessorList([Cut(lowlim=2000, highlim=2006), LinearBaseline()])
     preproc = PreprocessorList([LinearBaseline(), Cut(lowlim=2000, highlim=2006)])
     # preproc = PreprocessorList([Cut(lowlim=2000, highlim=2006), Cut(lowlim=2002, highlim=2006)])
+    # Test 2nd Deriv superwide
+    # from orangecontrib.spectroscopy.preprocess import Normalize, Integrate, integrate, SavitzkyGolayFiltering
+    # preproc = PreprocessorList([Normalize(lower=1591.0484214631633, upper=1719.720747038586, int_method=integrate.IntegrateFeatureSimple), SavitzkyGolayFiltering(window=13, deriv=2), Integrate(methods=integrate.IntegrateFeatureAtPeak, limits=[[1625.0, 1.0], [1152.0, 1.0], [1575.0, 1.0], [1127.0, 1.0]])])
     ow = OWTilefile()
     ow.update_preprocessor(preproc)
     ow.show()
