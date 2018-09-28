@@ -124,7 +124,7 @@ if __name__ == '__main__':
         long_description=LONG_DESCRIPTION,
         author='Canadian Light Source, Biolab UL, Soleil, Elettra',
         author_email='stuart.read@lightsource.ca',
-        version="0.1.0",
+        version="0.1.1",
         packages=PACKAGES,
         package_data=PACKAGE_DATA,
         data_files=DATA_FILES,
