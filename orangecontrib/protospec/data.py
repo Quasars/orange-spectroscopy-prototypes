@@ -3,7 +3,7 @@ import numpy as np
 import Orange.data
 from Orange.data.io import FileFormat
 
-from orangecontrib.spectroscopy.data import _spectra_from_image
+from orangecontrib.spectroscopy.data import _spectra_from_image, agilentMosaicReader
 from orangecontrib.spectroscopy.preprocess import Cut
 
 from .agilent import agilentMosaicTiles
@@ -36,6 +36,7 @@ class agilentMosaicTileReader(FileFormat, TileFileFormat):
     """ Tile-by-tile reader for Agilent FPA mosaic image files"""
     EXTENSIONS = ('.dmt',)
     DESCRIPTION = 'Agilent Mosaic Tile-by-tile'
+    PRIORITY = agilentMosaicReader.PRIORITY + 100
 
     def __init__(self, filename):
         super().__init__(filename)

@@ -101,6 +101,26 @@ class OWTilefile(owfile.OWFile):
             return self.Warning.no_preprocessor()
         self.load_data()
 
+    @classmethod
+    def get_tile_reader(cls, filename):
+        """Return reader instance that can be used to read a file tile-wise
+
+        Parameters
+        ----------
+        filename : str
+
+        Returns
+        -------
+        FileFormat
+        """
+        readers = [f for f in FileFormat.formats
+                   if getattr(f, 'read_tile', None) and getattr(f, "EXTENSIONS", None)]
+        for reader in readers:
+            if os.path.splitext(filename)[1] in reader.EXTENSIONS:
+                return reader(filename)
+
+        raise IOError('No readers for file "{}"'.format(filename))
+
     def _get_reader(self):
         """
         Returns
@@ -114,7 +134,7 @@ class OWTilefile(owfile.OWFile):
                 reader_class = class_from_qualified_name(qname)
                 reader = reader_class(path)
             else:
-                reader = FileFormat.get_reader(path)
+                reader = self.get_tile_reader(path)
             if self.recent_paths and self.recent_paths[0].sheet:
                 reader.select_sheet(self.recent_paths[0].sheet)
             # set preprocessor here
