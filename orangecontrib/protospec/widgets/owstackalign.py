@@ -126,11 +126,20 @@ def process_stack(data, pxwidth):
     # TODO: the transpose should be taken out and the actual alignment code should work on the native structure
     [shifts, aligned_stack] = alignstack(hypercube.T, pxwidth)
 
+    # TODO: calculate the cropping here and return the selection vector to the commit function to use it later for cropping
+    xmin, ymin = shifts[:, 1].min(), shifts[:, 0].min()
+    xmax, ymax = shifts[:, 1].max(), shifts[:, 0].max()
+    xmin, xmax = int(xmin), int(xmax)
+    ymin, ymax = int(ymin), int(ymax)
+
+    shape = hypercube.shape
+    cropped = np.array(aligned_stack).T[-ymin:(shape[0]-ymax), xmax:(shape[1]+xmin)]
+
     # transform numpy array back to Orange.data.Table
-    features, spectra, data = _spectra_from_image(np.array(aligned_stack).T,
+    features, spectra, data = _spectra_from_image(cropped,
                                                   getx(data),
-                                                  np.linspace(*lsx),
-                                                  np.linspace(*lsy))
+                                                  np.linspace(*lsx)[xmax:(shape[1]+xmin)],
+                                                  np.linspace(*lsy)[-ymin:(shape[0]-ymax)])
 
     # TODO: make it nice. Reused code from: data.py / SpectralFileFormat.read()
     newfeatures = [Orange.data.ContinuousVariable.make("%f" % f) for f in features]
@@ -140,32 +149,7 @@ def process_stack(data, pxwidth):
     newdata = data.transform(newdomain)
     newdata.X = spectra
 
-    # TODO: calculate the cropping here and return the selection vector to the commit function to use it later for cropping
-    xmin, ymin = shifts[:, 1].min(), shifts[:, 0].min()
-    xmax, ymax = shifts[:, 1].max(), shifts[:, 0].max()
-
-    newxat = newdata.domain["map_x"]
-    newyat = newdata.domain["map_y"]
-
-    newndom = Orange.data.Domain([newxat, newyat])
-    newdatam = Orange.data.Table(newndom, newdata)
-    newcoorx = newdatam.X[:, 0]
-    newcoory = newdatam.X[:, 1]
-
-    crop_selection_vector = (newcoorx.min()+xmin < newcoorx) * \
-                            (newcoorx.max()-xmax > newcoorx)# * \
-    #                         (newcoory.min()+ymin < newcoory) * \
-    #                         (newcoory.max()+ymax > newcoory)
-
-    print('*** xmin, xmax / ymin, ymax', xmin, xmax, '/', ymin, ymax)
-    print('*** cxmin, cxmax / cymin, cymax', newcoorx.min(), newcoorx.max(), '/', newcoory.min(), newcoory.max())
-
-    for i in np.random.randint(0,40000,40):
-        print(newcoorx.min()+xmin, newcoorx[i])
-
-    print('*** True elements in crop:', crop_selection_vector.sum())
-
-    return newdata, crop_selection_vector
+    return newdata
 
 
 class OWStackAlign(OWWidget):
@@ -253,7 +237,7 @@ class OWStackAlign(OWWidget):
         new_stack = None
 
         if self.data and self.pxwidth is not None and not self.isaligned:
-            self.new_stack, self.crop_selection_vector = process_stack(self.data, self.pxwidth)
+            self.new_stack = process_stack(self.data, self.pxwidth)
             self.isaligned = True
 
         if self.cropstack and self.isaligned:
@@ -281,7 +265,7 @@ def main(argv=sys.argv):
     ow.show()
     ow.raise_()
     # TODO make a small file with test data that can be uploaded with the code
-    dataset = Orange.data.Table("/Volumes/borondics/Documents/data/@Soleil/HERMES/Sample_Stack_2016-04-20_136_2.hdf5")
+    dataset = Orange.data.Table("/Users/marko/STXM_align_stack/Sample_Stack_2016-04-20_136_2.hdf5")
     ow.set_data(dataset)
     app.exec_()
     return 0
