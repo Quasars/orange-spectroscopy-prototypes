@@ -177,9 +177,7 @@ class OWStackAlign(OWWidget):
     resizing_enabled = False
 
     pxwidth = settings.Setting(None)
-    cropstack = settings.Setting(False)
     isaligned = False
-    crop_selection_vector = None
     new_stack = None
 
     class Warning(OWWidget.Warning):
@@ -198,14 +196,9 @@ class OWStackAlign(OWWidget):
         # TODO:
         # implement options
         #   [x] pixel width
-        #   [ ]cropping
         #   [ ] feedback for how well the images are aligned
         self.le1 = lineEditFloatOrNone(box, self, "pxwidth", callback=self.le1_changed)
         formlayout.addRow("Pixel Width", self.le1)
-
-        # gui.checkBox(self.controlArea, self, "cropstack",
-        gui.checkBox(box, self, "cropstack",
-                     "Crop data", callback=self.cropstack_changed)
 
         self.data = None
         self.set_data(self.data)
@@ -229,20 +222,12 @@ class OWStackAlign(OWWidget):
         self.isaligned = False
         self.commit()
 
-    def cropstack_changed(self):
-        self.commit()
-
-
     def commit(self):
         new_stack = None
 
         if self.data and self.pxwidth is not None and not self.isaligned:
             self.new_stack = process_stack(self.data, self.pxwidth)
             self.isaligned = True
-
-        if self.cropstack and self.isaligned:
-            # print(self.crop_selection_vector)
-            self.new_stack = self.new_stack[self.crop_selection_vector]
 
         self.Outputs.newstack.send(self.new_stack)
 
