@@ -129,7 +129,7 @@ if __name__ == '__main__':
         package_data=PACKAGE_DATA,
         data_files=DATA_FILES,
         install_requires=[
-            'orange-spectroscopy>=0.3.7',
+            'orange-spectroscopy>=0.4.0',
         ],
         entry_points=ENTRY_POINTS,
         keywords=KEYWORDS,

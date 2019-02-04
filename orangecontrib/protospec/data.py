@@ -6,7 +6,7 @@ from Orange.data.io import FileFormat
 from orangecontrib.spectroscopy.data import _spectra_from_image, agilentMosaicReader
 from orangecontrib.spectroscopy.preprocess import Cut
 
-from .agilent import agilentMosaicTiles
+from orangecontrib.spectroscopy.agilent import agilentMosaicTiles
 
 
 class TileFileFormat:
