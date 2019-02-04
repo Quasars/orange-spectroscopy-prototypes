@@ -8,13 +8,13 @@ matrix:
       env: ORANGE="release"  RUN_PYLINT=true
 
     - python: '3.6'
-      env: ORANGE="3.11.0"
+      env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.0"
 
     - python: '3.6'
-      env: ORANGE="release"
+      env: ORANGE="release"  ORANGE_SPEC="release"
 
     - python: '3.6'
-      env: ORANGE="master"
+      env: ORANGE="master"  ORANGE_SPEC="master"
 
 cache:
     apt: true
