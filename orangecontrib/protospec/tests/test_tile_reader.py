@@ -69,17 +69,13 @@ class TestTileReaderWidget(WidgetTest):
         # OWPreprocess test setup from test_owpreprocess.test_allpreproc_indv
         self.preproc_widget = self.create_widget(OWPreprocess)
         pp = PREPROCESSORS[0]
-        # v0.3.13:
-        # self.preproc_widget.add_preprocessor(0)
         self.preproc_widget.add_preprocessor(pp)
         self.preproc_widget.show_preview()
         self.preproc_widget.apply()
-        self.commit_and_wait(widget=self.preproc_widget)
         pp_out = self.get_output("Preprocessor", widget=self.preproc_widget)
         self.send_signal("Preprocessor", pp_out, widget=self.widget)
         self.assertEqual(self.widget.preprocessor, pp_out)
         pp_from_model = self.preproc_widget._create_preprocessor(
             self.preproc_widget.preprocessormodel.item(0), None)
-        # v0.3.13
-        # self.assertIsInstance(self.widget.preprocessor, type(self.preproc_widget.buildpreproc()))
-        self.assertIsInstance(self.widget.preprocessor, type(pp_from_model))
+        pp_tile = self.widget.preprocessor.preprocessors[0]
+        self.assertIsInstance(pp_tile, type(pp_from_model))
