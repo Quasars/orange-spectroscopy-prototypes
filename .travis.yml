@@ -1,23 +1,20 @@
 language: python
 
-sudo: false
+dist: xenial
 
 matrix:
   include:
-    - python: '3.5'
-      env: PYQT5=true ORANGE="release"  RUN_PYLINT=true
+    - python: '3.6'
+      env: ORANGE="release"  RUN_PYLINT=true
 
-    - python: '3.4'
-      env: PYQT4=true ORANGE="3.11.0"
+    - python: '3.6'
+      env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.0"
 
-    - python: '3.5'
-      env: PYQT5=true ORANGE="3.11.0"
+    - python: '3.6'
+      env: ORANGE="release"  ORANGE_SPEC="release"
 
-    - python: '3.5'
-      env: PYQT5=true ORANGE="release"
-
-    - python: '3.5'
-      env: PYQT5=true ORANGE="master"
+    - python: '3.6'
+      env: ORANGE="master"  ORANGE_SPEC="master"
 
 cache:
     apt: true
@@ -28,7 +25,8 @@ cache:
 install:
     # Update pip to be able to install wheel dependencies
     - pip install -U pip wheel
-    - source $TRAVIS_BUILD_DIR/.travis/install_pyqt.sh
+    # 20180124 force PyQt 5.9.2 due to segfaults on new 5.10
+    - pip install sip pyqt5==5.9.2
     - source $TRAVIS_BUILD_DIR/.travis/install_orange.sh
     - pip install -e .
 
