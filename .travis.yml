@@ -8,7 +8,7 @@ matrix:
       env: ORANGE="release" ORANGE_SPEC="release" RUN_PYLINT=true
 
     - python: '3.6'
-      env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.0"
+      env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.1"
 
     - python: '3.6'
       env: ORANGE="release"  ORANGE_SPEC="release"
