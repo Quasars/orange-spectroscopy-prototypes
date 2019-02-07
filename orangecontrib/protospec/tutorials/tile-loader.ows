@@ -13,7 +13,7 @@
 		<text font-family="Helvetica" font-size="16" id="0" rect="(63.0, 120.0, 249.0, 146.0)" type="text/plain">1. Select desired preprocessors.
 
 At least one of the preprocessors should reduce the dataset size (Cut, Integrate) to provide a benefit to using the tile-by-tile loader.</text>
-		<text font-family="Helvetica" font-size="16" id="1" rect="(344.0, 120.0, 235.0, 127.0)" type="text/plain">2. Load (or reload) the desired dataset. 
+		<text font-family="Helvetica" font-size="16" id="1" rect="(344.0, 120.0, 235.0, 127.0)" type="text/plain">2. Load (or reload) the desired dataset.
 
 The widget should prevent/discourage accidental loading of the full, unpreprocessed file.</text>
 		<text font-family="Helvetica" font-size="16" id="2" rect="(669.0, 115.0, 150.0, 50.0)" type="text/plain">3. Continue your analysis as normal.</text>
@@ -49,7 +49,7 @@ MDEzMnFkaCxLAGgOiGVdcWUoaC5oLEsCaA6IZV1xZihoMGgsSwJoDohlZXNoG0sBdWgxKGhUSwKG
 cWdoVksChnFoaFhLAoZxaWhaSwKGcWpoXEsChnFraF5LAoZxbGhgSwKGcW1oYksChnFuaGRLAoZx
 b3RxcGg0aC5LAoZxcWgwSwKGcXKGcXNoOCloOV1xdHViZXUu
 </properties>
-		<properties format="literal" node_id="1">{'autocommit': False, 'controlAreaVisible': True, 'preview_curves': 3, 'preview_n': 0, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x02\x00\x00\x00\x00\x02b\x00\x00\x01r\x00\x00\x04\xfd\x00\x00\x03\xa1\x00\x00\x02j\x00\x00\x01\x91\x00\x00\x04\xf5\x00\x00\x03\x99\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80', 'storedsettings': {'name': '', 'preprocessors': [('orangecontrib.infrared.baseline', {}), ('orangecontrib.infrared.integrate', {'limits': [[2000.0, 2100.0]], 'method': 0})]}, 'curveplot': {'invertX': False, 'label_title': '', 'label_xaxis': '', 'label_yaxis': '', 'range_x1': None, 'range_x2': None, 'range_y1': None, 'range_y2': None, 'sample_seed': 0, 'selection_group_saved': None, 'viewtype': 0}, 'curveplot_after': {'invertX': False, 'label_title': '', 'label_xaxis': '', 'label_yaxis': '', 'range_x1': None, 'range_x2': None, 'range_y1': None, 'range_y2': None, 'sample_seed': 0, 'selection_group_saved': None, 'viewtype': 0}, '__version__': 3}</properties>
+		<properties format="literal" node_id="1">{'autocommit': True, 'controlAreaVisible': True, 'preview_curves': 3, 'preview_n': 0, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x02\x00\x00\x00\x00\x02b\x00\x00\x01r\x00\x00\x04\xfd\x00\x00\x03\xa1\x00\x00\x02j\x00\x00\x01\x91\x00\x00\x04\xf5\x00\x00\x03\x99\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80', 'storedsettings': {'name': '', 'preprocessors': [('orangecontrib.infrared.baseline', {}), ('orangecontrib.infrared.integrate', {'limits': [[2000.0, 2100.0]], 'method': 0})]}, 'curveplot': {'invertX': False, 'label_title': '', 'label_xaxis': '', 'label_yaxis': '', 'range_x1': None, 'range_x2': None, 'range_y1': None, 'range_y2': None, 'sample_seed': 0, 'selection_group_saved': None, 'viewtype': 0}, 'curveplot_after': {'invertX': False, 'label_title': '', 'label_xaxis': '', 'label_yaxis': '', 'range_x1': None, 'range_x2': None, 'range_y1': None, 'range_y2': None, 'sample_seed': 0, 'selection_group_saved': None, 'viewtype': 0}, '__version__': 3}</properties>
 		<properties format="pickle" node_id="2">gAN9cQAoWAYAAABjaG9vc2VxAWNudW1weS5jb3JlLm11bHRpYXJyYXkKc2NhbGFyCnECY251bXB5
 CmR0eXBlCnEDWAIAAABmNHEESwBLAYdxBVJxBihLA1gBAAAAPHEHTk5OSv////9K/////0sAdHEI
 YkMEAAAAAHEJhnEKUnELWBIAAABjb250cm9sQXJlYVZpc2libGVxDIhYBwAAAGhpZ2hsaW1xDWgL

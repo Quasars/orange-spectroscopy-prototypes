@@ -5,7 +5,7 @@ dist: xenial
 matrix:
   include:
     - python: '3.6'
-      env: ORANGE="release"  RUN_PYLINT=true
+      env: ORANGE="release" ORANGE_SPEC="release" RUN_PYLINT=true
 
     - python: '3.6'
       env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.0"
@@ -28,6 +28,7 @@ install:
     # 20180124 force PyQt 5.9.2 due to segfaults on new 5.10
     - pip install sip pyqt5==5.9.2
     - source $TRAVIS_BUILD_DIR/.travis/install_orange.sh
+    - source $TRAVIS_BUILD_DIR/.travis/install_orange_spec.sh
     - pip install -e .
 
 script:

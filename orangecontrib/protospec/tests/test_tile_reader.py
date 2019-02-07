@@ -8,6 +8,7 @@ from Orange.widgets.tests.base import WidgetTest
 
 from orangecontrib.spectroscopy import get_sample_datasets_dir
 from orangecontrib.spectroscopy.tests.test_preprocess import PREPROCESSORS_INDEPENDENT_SAMPLES
+from orangecontrib.spectroscopy.widgets.owpreprocess import OWPreprocess, PREPROCESSORS
 
 from orangecontrib.protospec.widgets.owtilefile import OWTilefile
 
@@ -65,4 +66,16 @@ class TestTileReaderWidget(WidgetTest):
 
     def test_preproc_load(self):
         """ Test that loading a preprocessor signal in the widget works """
-        pass #TODO
+        # OWPreprocess test setup from test_owpreprocess.test_allpreproc_indv
+        self.preproc_widget = self.create_widget(OWPreprocess)
+        pp = PREPROCESSORS[0]
+        self.preproc_widget.add_preprocessor(pp)
+        self.preproc_widget.show_preview()
+        self.preproc_widget.apply()
+        pp_out = self.get_output("Preprocessor", widget=self.preproc_widget)
+        self.send_signal("Preprocessor", pp_out, widget=self.widget)
+        self.assertEqual(self.widget.preprocessor, pp_out)
+        pp_from_model = self.preproc_widget._create_preprocessor(
+            self.preproc_widget.preprocessormodel.item(0), None)
+        pp_tile = self.widget.preprocessor.preprocessors[0]
+        self.assertIsInstance(pp_tile, type(pp_from_model))
