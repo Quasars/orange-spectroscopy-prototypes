@@ -1,7 +1,7 @@
 import os
 
 from AnyQt.QtCore import Qt
-from AnyQt.QtWidgets import QApplication
+from AnyQt.QtWidgets import QApplication, QLabel
 
 from Orange.data.io import FileFormat, UrlReader, class_from_qualified_name
 from Orange.preprocess.preprocess import Preprocess, PreprocessorList
@@ -12,6 +12,7 @@ from Orange.widgets.utils.filedialogs import RecentPath, open_filename_dialog
 from Orange.widgets.widget import Input, Msg
 
 from orangecontrib.spectroscopy import get_sample_datasets_dir
+from orangecontrib.spectroscopy.widgets.gui import lineEditIntRange
 
 
 class OWTilefile(owfile.OWFile):
@@ -29,6 +30,7 @@ class OWTilefile(owfile.OWFile):
     recent_paths = Setting([
         RecentPath("", "sample-datasets", "agilent/5_mosaic_agg1024.dmt"),
     ])
+    bin_sqrt = Setting(1)
 
     class Inputs:
         preprocessor = Input("Preprocessor", Preprocess)
@@ -44,8 +46,21 @@ class OWTilefile(owfile.OWFile):
         self.preprocessor = None
         super().__init__()
 
+        box = gui.vBox(self.controlArea, "Binning")
+        gui.separator(box)
+        hbox = gui.hBox(box)
+        self.le1 = lineEditIntRange(box, self, "bin_sqrt", bottom=1, default=1,
+                                    callback=self._bin_changed)
+        hbox.layout().addWidget(QLabel("Bin size:", self))
+        hbox.layout().addWidget(self.le1)
+        self.info_binning = gui.widgetLabel(box, '')
+
         box = gui.vBox(self.controlArea, "Preprocessor")
         self.info_preproc = gui.widgetLabel(box, 'No preprocessor on input.')
+
+    def _bin_changed(self):
+        # TODO will say this even if it didn't actually change
+        self.info_binning.setText("Binning changed, reload file to use.")
 
     @staticmethod
     def _is_preproc(p):
@@ -139,6 +154,8 @@ class OWTilefile(owfile.OWFile):
                 reader.select_sheet(self.recent_paths[0].sheet)
             # set preprocessor here
             if hasattr(reader, "read_tile"):
+                reader.set_bin_sqrt(self.bin_sqrt)
+                self.info_binning.setText("{0} x {0} binning.".format(self.bin_sqrt))
                 reader.set_preprocessor(self.preprocessor)
                 if self.preprocessor is not None:
                     self.info_preproc.setText(
