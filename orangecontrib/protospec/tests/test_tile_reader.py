@@ -17,7 +17,8 @@ AGILENT_TILE = "agilent/5_mosaic_agg1024.dmt"
 # EMSC test fails on this dataset with
 # "ValueError: On entry to DLASCL parameter number 4 had an illegal value"
 PREPROCESSORS_INDEPENDENT_SAMPLES_NO_EMSC = [
-    p for p in PREPROCESSORS_INDEPENDENT_SAMPLES if type(p).__name__ not in ["EMSC", "ExtractEXAFSUsage"]]
+    p for p in PREPROCESSORS_INDEPENDENT_SAMPLES
+    if type(p).__name__ not in ["EMSC", "ExtractEXAFSUsage"]]
 
 class TestTileReaders(unittest.TestCase):
 
