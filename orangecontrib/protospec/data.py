@@ -5,7 +5,7 @@ from Orange.data.io import FileFormat
 
 from orangecontrib.spectroscopy.data import _spectra_from_image, agilentMosaicReader
 from orangecontrib.spectroscopy.preprocess import Cut
-from orangecontrib.spectroscopy.utils.binning import bin_hypercube
+from orangecontrib.spectroscopy.utils.binning import bin_hyperspectra
 
 from orangecontrib.spectroscopy.agilent import agilentMosaicTiles
 
@@ -25,9 +25,10 @@ class TileFileFormat:
         ret_table = None
         for tile_table in self.read_tile():
             if self.bin_sqrt > 1:
+                bin_shape = (self.bin_sqrt, self.bin_sqrt)
                 xat = [v for v in tile_table.domain.metas if v.name == "map_x"][0]
                 yat = [v for v in tile_table.domain.metas if v.name == "map_y"][0]
-                tile_table = bin_hypercube(tile_table, xat, yat, self.bin_sqrt)
+                tile_table = bin_hyperspectra(tile_table, [xat, yat], bin_shape)
             if ret_table is None:
                 ret_table = self.preprocess(tile_table)
             else:
