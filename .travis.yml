@@ -2,13 +2,15 @@ language: python
 
 dist: xenial
 
+addons:
+    apt:
+        packages:
+            - libxkbcommon-x11-0  # for PyQt 5.12
+
 matrix:
   include:
     - python: '3.6'
       env: ORANGE="release" ORANGE_SPEC="release" RUN_PYLINT=true
-
-    - python: '3.6'
-      env: ORANGE="3.11.0"  ORANGE_SPEC="0.4.1"
 
     - python: '3.6'
       env: ORANGE="release"  ORANGE_SPEC="release"
@@ -24,12 +26,12 @@ cache:
 
 install:
     # Update pip to be able to install wheel dependencies
-    - pip install -U pip wheel
-    # 20180124 force PyQt 5.9.2 due to segfaults on new 5.10
-    - pip install sip pyqt5==5.9.2
+    - pip install -U pip wheel codecov
+    - pip install pyqt5~=5.12.0 pyqtwebengine~=5.12.0
     - source $TRAVIS_BUILD_DIR/.travis/install_orange.sh
     - source $TRAVIS_BUILD_DIR/.travis/install_orange_spec.sh
     - pip install -e .
+    - pip freeze
 
 script:
     - source $TRAVIS_BUILD_DIR/.travis/stage_script.sh
