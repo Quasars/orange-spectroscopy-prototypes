@@ -1,3 +1,2 @@
-import Orange.data
-import os.path
-from . import data #register file formats
+# Register file formats:
+from . import data  # noqa: F401

@@ -24,3 +24,4 @@ repos:
           - flake8-comprehensions
           - pep8-naming
           - flake8-black
+          - flake8-pyproject

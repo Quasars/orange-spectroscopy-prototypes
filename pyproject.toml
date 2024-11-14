@@ -36,6 +36,9 @@ test = [
     "flake8-pyproject",
     "black",
 ]
+dev = [
+    "pre-commit",
+]
 
 [project.urls]
 Homepage = "https://github.com/Quasars/orange-spectroscopy-prototypes"
