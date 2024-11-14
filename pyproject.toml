@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orange-spectroscopy-prototypes"
+description = 'Prototype widgets for orange-spectroscopy add-on'
+authors = [
+    { name="Stuart Read", email="stuart.read@lightsource.ca"}
+]
+version = "2024.11.14"
+readme = {file = "README.pypi", content-type = "text/markdown"}
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+]
+keywords = ["orange3 add-on", "spectroscopy", "prototypes"]
+dependencies = [
+    "orange-spectroscopy>=0.7.2",
+]
+
+[project.optional-dependencies]
+doc = [
+    "sphinx",
+    "recommonmark",
+    "sphinx_rtd_theme",
+]
+test = [
+    "pytest",
+    "coverage",
+    "flake8",
+    "flake8-bugbear",
+    "flake8-pyproject",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/Quasars/orange-spectroscopy-prototypes"
+Issues = "https://github.com/Quasars/orange-spectroscopy-prototypes/issues"
+
+[project.entry-points."orange3.addon"]
+protospec = "orangecontrib.protospec"
+
+[project.entry-points."orange.widgets"]
+"Spectroscopy Prototypes" = "orangecontrib.protospec.widgets"
+
+[project.entry-points."orange.canvas.help"]
+html-index = "orangecontrib.protospec.widgets:WIDGET_HELP_PATH"
+
+[tool.setuptools.packages.find]
+include = ["orangecontrib*"]
+
+[tool.black]
+skip_string_normalization = '1'
+
+[tool.flake8]
+# Black compatibility
+max-line-length = 88
+extend-ignore = [
+    # See https://github.com/PyCQA/pycodestyle/issues/373
+    'E203',
+    # Ignore this since we use PyQt5 basically everywhere.
+    'N802',
+    # https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html#line-length
+    'E501',
+]
+extend-select = ['B590']
