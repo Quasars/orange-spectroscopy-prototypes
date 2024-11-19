@@ -7,6 +7,7 @@ dist
 *.o
 *.py[doc]
 MANIFEST
+.tox
 
 # Cython generated files
 __pycache__
@@ -22,6 +23,7 @@ __pycache__
 
 # Coverage reports
 htmlcov/*
+.coverage
 
 # check_pylint_diff
 .pylint_cache
