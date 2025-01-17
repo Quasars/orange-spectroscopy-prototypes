@@ -5,6 +5,7 @@ from os import path
 import h5py
 import numpy as np
 import pandas as pd
+import Orange.data
 from Orange.data import (
     ContinuousVariable,
     DiscreteVariable,
@@ -17,6 +18,7 @@ from Orange.data.io import FileFormat
 
 from Orange.version import short_version as ORANGE_VERSION  # noqa N812
 
+from orangecontrib.spectroscopy.io import HDF5Reader_ROCK
 
 # For testing until https://github.com/biolab/orange3/pull/6791 is resolved
 class HDF5Reader(FileFormat):
@@ -138,3 +140,129 @@ class HDF5Reader(FileFormat):
                         col_data[pd.isnull(col_data)] = ""
                     f.create_dataset(f'metas/{i}', data=col_data, dtype=col_type)
         cls.write_table_metadata(filename, data)
+
+
+class IRisF1HDF5Reader(FileFormat):
+    """Reader for IRsweep IRis-F1 HDF5 _processed_data files"""
+    EXTENSIONS = ('.h5',)
+    DESCRIPTION = 'IRsweep IRis-F1 _processed_data'
+
+    TRANSMISSION = "Transmission"
+    NORMALIZATION_VECTOR = "Normalization Vector"
+
+    @property
+    def sheets(self):
+        return [self.TRANSMISSION, self.NORMALIZATION_VECTOR]
+
+    def read_spectra(self):
+        from heterodyne_postprocessing.processing.postProcessorHDF5 import PostProcessorHDF5Loader
+        proc = PostProcessorHDF5Loader()
+        proc.load_configuration(self.filename)
+        proc.load_transmission()
+
+        energy = proc.data['wnAxis']
+
+        if self.sheet == self.NORMALIZATION_VECTOR:
+            data = proc.data['normalizationVector'].T
+
+            import_attrs = ['stdPeak',
+                             'peakMeanAmp',
+            ]
+            var_attr_d = dict((k, proc.data[k]) for k in import_attrs if k in proc.data)
+
+            return (energy, data, None, var_attr_d)
+
+        elif proc.is_timeresolved():
+            data = proc.data['transientTrans']
+            time_axis = proc.data['timeAxis']
+
+            import_attrs = ['peakMeanAmp',
+            ]
+            var_attr_d = dict((k, proc.data[k]) for k in import_attrs if k in proc.data)
+
+            return (*self._spectra_from_time_resolved(data, energy, time_axis), var_attr_d)
+
+        else:
+            data = proc.data['transmission'].T
+
+            import_attrs = ['stdPeak',
+                             'peakMeanAmp',
+            ]
+            var_attr_d = dict((k, proc.data[k]) for k in import_attrs if k in proc.data)
+
+            # Time stamps
+            time_stamp = np.atleast_2d(proc.data['timeStamp']).T
+            add_dom = Orange.data.Domain([], None,
+                                         metas=[Orange.data.ContinuousVariable.make("Time")])
+            add_table = Orange.data.Table.from_numpy(add_dom, X=np.zeros((len(data), 0)),
+                                                     metas=np.asarray(time_stamp, dtype=object))
+
+            return (energy, data, add_table, var_attr_d)
+
+    # same as SpectralFileFormat but accepts and uses variable attributes
+    def read(self):
+        domvals, data, additional_table, var_attr_d = self.read_spectra()
+        data = np.asarray(data, dtype=np.float64)  # Orange assumes X to be float64
+        features = []
+        for i, f in enumerate(domvals):
+            var = Orange.data.ContinuousVariable.make("%f" % f)
+            for k, v in var_attr_d.items():
+                var.attributes[k] = v[i]
+            features.append(var)
+        if additional_table is None:
+            domain = Orange.data.Domain(features, None)
+            return Orange.data.Table(domain, data)
+        else:
+
+            domain = Domain(features,
+                            class_vars=additional_table.domain.class_vars,
+                            metas=additional_table.domain.metas)
+            ret_data = Table.from_numpy(domain, X=data, Y=additional_table.Y,
+                                        metas=additional_table.metas)
+            return ret_data
+
+    # based on _spectra_from_image
+    @staticmethod
+    def _spectra_from_time_resolved(X, features, time_axis):
+        """
+        Create a spectral format (returned by SpectralFileFormat.read_spectra)
+        from 3D data organized [ time, wavelengths, acquisitions ]
+        """
+        X = np.asarray(X)
+        # rearrange axes: [ acquisitions, time, wavelengths ]
+        X = X.transpose((2, 0, 1))
+        time_axis = np.asarray(time_axis)
+        acq_nums = np.arange(X.shape[1])
+
+        # each spectrum has its own row
+        spectra = X.reshape((X.shape[0]*X.shape[1], X.shape[2]))
+
+        # locations
+        acq_num = np.repeat(np.arange(X.shape[0]), X.shape[1])
+        time = np.tile(np.arange(X.shape[1]), X.shape[0])
+        metas = np.array([time_axis[time], acq_nums[acq_num]]).T
+
+        domain = Orange.data.Domain([], None,
+                                    metas=[Orange.data.ContinuousVariable.make("Time"),
+                                           Orange.data.ContinuousVariable.make("Acquisition")]
+                                   )
+        data = Orange.data.Table.from_numpy(domain, X=np.zeros((len(spectra), 0)),
+                                            metas=np.asarray(metas, dtype=object))
+        return features, spectra, data
+
+
+# Required with new .h5 SOLEIL ROCK reader
+class HDF5MetaReader(FileFormat):
+    """ Meta-reader to select appropriate HDF5 reader."""
+    EXTENSIONS = ('.h5',)
+    DESCRIPTION = 'HDF5 Meta-reader'
+    PRIORITY = min(IRisF1HDF5Reader.PRIORITY, HDF5Reader_ROCK.PRIORITY) - 1
+
+    def read(self):
+        with h5py.File(self.filename, "r") as f:
+            try:
+                f['info'].attrs['SoftwareVersion'][0]
+            except: # TODO should use exact error here
+                return HDF5Reader_ROCK(filename=self.filename).read()
+            else:
+                return IRisF1HDF5Reader(filename=self.filename).read()

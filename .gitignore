@@ -28,5 +28,8 @@ htmlcov/*
 # check_pylint_diff
 .pylint_cache
 
+# Temporary test data
+temp-testdata
+
 # venv
 venv
