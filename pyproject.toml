@@ -47,6 +47,9 @@ Issues = "https://github.com/Quasars/orange-spectroscopy-prototypes/issues"
 [project.entry-points."orange3.addon"]
 protospec = "orangecontrib.protospec"
 
+[project.entry-points."orange.widgets.tutorials"]
+"Spectroscopy Prototypes Examples" = "orangecontrib.protospec.tutorials"
+
 [project.entry-points."orange.widgets"]
 "Spectroscopy Prototypes" = "orangecontrib.protospec.widgets"
 
