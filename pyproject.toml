@@ -61,6 +61,7 @@ include = ["orangecontrib*"]
 
 [tool.black]
 skip_string_normalization = '1'
+force-exclude = '''.*heterodyne_postprocessing.*'''
 
 [tool.flake8]
 # Black compatibility
@@ -74,3 +75,4 @@ extend-ignore = [
     'E501',
 ]
 extend-select = ['B590']
+exclude = ['heterodyne_postprocessing']
