@@ -1,4 +1,4 @@
 # Ref https://docs.python.org/2/distutils/sourcedist.html#commands
-recursive-include orangecontrib *.ows icons/*
+recursive-include orangecontrib *.ows icons/* datasets/* scripts
 global-exclude __pycache__
 include README.pypi
