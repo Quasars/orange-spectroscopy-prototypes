@@ -101,67 +101,8 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         self.load_transmission()
         if calibrate == True:
             self.calibrateWNaxisOfMeasurement(calibFilename=calibrated_calibration_name, plotOn=False)  
-        
-
-    def average(self, startIndx = None, stopIndx = None, spectralHalfWidth = 0, gaussianConvolve = False, gaussianWNsigma = 0, plotOn = False, threshold = 1):
-        """
-        Decides how to do acquisition and spectral averaging. If individual processing
-        is selected, no acquisition averaging is applied and a time axis is generated, 
-        otherwise the processing proceeds as normal.  
-                
-        Input
-        ------
-            individual_processing - bool  - whether or not to carry out acquisition averaging 
-            startIndx             - int   - first acquisition for averaging 
-            stopIndx              - ing   - last acquisition for averaging
-            spectralHalfWidth     - int   - determines the window size for boxcar smoothing
-            gaussianConvolve      - bool  - whether or not to use Gaussian smoothing
-            gaussianWNsigma       - float - determines window size for Gaussian smoothing 
-            plotOn                - bool  - wheteher to plot the intermediate steps
-            
-        Returns
-        -------
-            none
-        
-        """
-        if self.is_timeresolved() == False:
-            self.individual_avg(spectralHalfWidth, gaussianConvolve, gaussianWNsigma, plotOn, threshold)
-            self.data['timeAxis'] = self.data['timeStamp']
-        else:
-            self.acquisition_average(startIndx, stopIndx, plotOn)
-            self.spectral_smoothing(spectralHalfWidth, plotOn, gaussianConvolve, gaussianWNsigma, threshold)
 
 
-    def individual_avg(self, spectralHalfWidth, gaussianConvolve, gaussianWNsigma, plotOn, threshold):
-        """
-        Applies spectral smoothing according to user input to each individual acquisition 
-        and saves the result in data['transmissionSpectralAvgOfIndividualFiles']
-        
-        Input
-        ------
-            spectralHalfWidth - int   - determines the window size for boxcar smoothing
-            gaussianConvolve  - bool  - whether or not to use Gaussian smoothing
-            gaussianWNsigma   - float - determines window size for Gaussian smoothing 
-            
-        Returns
-        -------
-            none
-        
-        """
-        tmp = []
-        for i in range(self.data['transmission'].shape[-1]):
-            self.data['transmissionAvgOfFiles'] = self.data['transmission'][:,i]
-            
-            # avoid creation of large number of plots
-            if i > 0:
-                plotOn = False
-                
-            self.spectral_smoothing(spectralHalfWidth, plotOn, gaussianConvolve, gaussianWNsigma, threshold)
-            tmp.append(self.data['transmissionSpectralAvgOfFiles'])
-        
-        self.data.update({'transmissionSpectralAvgOfIndividualFiles':np.array(tmp)}) 
-
-        
     def find_idx(self, entries, axis): 
         """
         Finds the index of the nearest-value element in an array.
@@ -190,7 +131,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         Input
         ------
             custom_data     - np array      - data input 
-            plot_at_time    - list of float - wavenumber points at which to plot
+            plot_at_time    - list of float - time points at which to plot 
             time_resolution - float         - time resolution of the output
             title           - str           - label for plot
             yaxis           - str           - label for y axis
@@ -244,7 +185,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         
         Input
         ------
-            plot_at_time    - list of float - time points at which to plot
+            plot_at_time    - list of float - time points at which to plot (in ms)
             integrationTime - float         - time resolution for plotted lines
             title           - str           - label for plot
             yaxis           - str           - label for y axis
@@ -258,6 +199,9 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
             array of spectra plotted
         
         """
+        # make sure the data getting function uses the averaged array
+        self.last_data_type = 'SpectralAvgOfFiles' 
+        
         # convert times to seconds
         integrationTime = integrationTime*1e-3
         startTime = np.multiply(startTime,1e-3)
@@ -284,7 +228,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         color_map = self.plot_colors(color_scheme, startTime)
         plt.ioff()
         if plotOn == True:
-            fig = plt.figure()
+            plt.figure()
             plt.show()
             
         plt.xlabel('Wavenumber [cm$^{-1}$]')
@@ -338,7 +282,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         color_map = self.plot_colors(color_scheme, specIdx)
         plt.ioff()
         if plotOn == True:
-            fig = plt.figure()
+            plt.figure()
             plt.show()
             
         plt.xlabel('Wavenumber [cm$^{-1}$]')
@@ -376,7 +320,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         color_map = self.plot_colors(color_scheme, [0])
         plt.ioff()
         if plotOn == True:
-            fig = plt.figure()
+            plt.figure()
             plt.show()
             
         plt.xlabel('Wavenumber [cm$^{-1}$]')
@@ -457,6 +401,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
             transient      - np array      - array of all kinetic traces plotted
         
         """
+        self.last_data_type = 'SpectralAvgOfFiles' 
         
         # convert to seconds
         timeResolution = timeResolution*1e-3
@@ -481,7 +426,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         color_map = self.plot_colors(color_scheme, centerWn)
         plt.ioff()
         if plotOn == True:
-            fig = plt.figure()
+            plt.figure()
             plt.show()
             
         plt.xlabel('Time [ms]')
@@ -517,8 +462,10 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         
         """
         # update timeAxis
-        self.time_axis_offset = np.subtract(self.data['timeStamp'], offset)
-        # self.make_time_axis(offset)
+        try:
+            self.time_axis_offset = np.subtract(self.data['timeAxis'], offset)
+        except:
+            self.time_axis_offset = np.subtract(self.data['timeStamp'], offset)
         
         plot_data = self.getOutputInType(plot_data, plot_type)
         peakIdx = self.find_idx(plot_at_wn, self.data['wnAxis'])
@@ -528,7 +475,7 @@ class PostProcessorPlottingUtilities(PostProcessorPlotTransient):
         
         plt.ioff()
         if plotOn == True:
-            fig = plt.figure()
+            plt.figure()
             plt.show()
             
         plt.xlabel('Time [s]')

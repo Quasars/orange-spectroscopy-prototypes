@@ -163,7 +163,7 @@ class PostProcessorCalibration(PostProcessorCSVSaver):
         first_wn = self.data['wnAxisCalib'][0]
         wn_spacing_calibrated = np.mean(np.gradient(np.squeeze(self.data['wnAxisCalib'])))
         corr = np.correlate(self.data['peakMeanAmpCalib'],self.data['peakMeanAmp'],'full')        
-        lag = np.float(np.argmax(corr))-self.config.noLines+1
+        lag = float(np.argmax(corr))-self.config.noLines+1
         
         new_wn = np.arange(0,self.config.noLines)*wn_spacing_calibrated
         new_wn = new_wn + first_wn

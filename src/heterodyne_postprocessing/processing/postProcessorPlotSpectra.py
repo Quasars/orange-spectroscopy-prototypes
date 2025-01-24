@@ -15,6 +15,7 @@ import matplotlib.gridspec as gridspec
 
 from PyQt5 import QtWidgets
 import numpy as np
+import copy
 
 class PostProcessorPlotSpectra(PostProcessorTimeResolved):
     def __init__(self):
@@ -36,6 +37,7 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         Output  :   final_plots(list) a list of dictionaries containing the 
                     saved spectra
         """
+        
         fig = plt.figure(figsize=(12,7))
         plt.subplots_adjust(left = 0.175)
         gs = gridspec.GridSpec(20,10)
@@ -50,9 +52,15 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         ax_savebutton = plt.subplot(gs[17,8:])
         ax_export = plt.subplot(gs[18,8:])
         ax_quit = plt.subplot(gs[19,8:])
+
+        if mode == 'absorbance':
+            y_ax = 'Absorbance'
+        if mode == 'transmission':
+            y_ax = 'Transmission'
+        elif mode == 'absorption':
+            y_ax = 'Absorption'
         
-        
-        ax_main.set_ylabel(mode)
+        ax_main.set_ylabel(y_ax)
         ax_main.set_xlabel('Wavenumber [$\mathrm{cm^{-1}}$]')
         
         
@@ -60,10 +68,10 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         init_res = np.mean(np.abs(np.gradient(self.data['wnAxis'], axis=0)))
         
         #Definition of the different objects
-        slider_timemin = Slider(ax_timemin,'Time 1 [ms]',np.min(self.data['timeAxis'])*1e3,np.max(self.data['timeAxis'])*1e3,valinit=1/3*np.max(self.data['timeAxis'])*1e3,valstep=1e-3,valfmt='%3.3fms')
-        slider_timemax = Slider(ax_timemax,'Time 2 [ms]',np.min(self.data['timeAxis'])*1e3,np.max(self.data['timeAxis'])*1e3,valinit=2/3*np.max(self.data['timeAxis'])*1e3,valstep=1e-3,valfmt='%3.3fms')
+        slider_time = Slider(ax_timemin,'Start Time [ms]',np.min(self.data['timeAxis'])*1e3,np.max(self.data['timeAxis'])*1e3,valinit=0,valstep=1e-3,valfmt='%3.3f ms')
+        slider_inttime = Slider(ax_timemax,'Integration Time [$\mu$s]',np.gradient(self.data['timeAxis'])[0]*1e6,(max(self.data['timeAxis']))*1e6/4,valinit=4*np.gradient(self.data['timeAxis'])[0]*1e6,valstep=1e-3,valfmt='%3.0f $\mu$s')
         slider_thr = Slider(ax_thr,'Threshold',0,1,valinit=1)
-        slider_smooth = Slider(ax_smooth,'Spectral resolution',init_res,40*init_res,valstep=2*init_res,valinit=10*init_res,valfmt='%1.4f$\mathrm{cm^{-1}}$')
+        slider_smooth = Slider(ax_smooth,'Spectral resolution',init_res,40*init_res,valstep=2*init_res,valinit=10*init_res,valfmt='%1.4f $\mathrm{cm^{-1}}$')
         
         button_save = Button(ax_savebutton,'Save spectrum',hovercolor='0.975')
         button_hide = Button(ax_hidebutton,'Hide spectra',hovercolor='0.975')
@@ -71,10 +79,9 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         button_export = Button(ax_export,'Export to CSV',hovercolor='0.975')
         
         
-        
         #Definition of the plots
-        self.spectral_smoothing(spectralHalfWidth=np.floor(slider_smooth.val/init_res/2),gaussianConvolve=False, plotOn=False)
-        init_spec = self.getSpectrumWithNoiseThreshold(slider_timemin.val*1e-3,slider_timemax.val*1e-3,slider_thr.val)
+        self.spectral_smoothing(spectralHalfWidth=np.floor(slider_smooth.val/init_res/2),gaussianConvolve=False, plotOn=False,writeParameters=False)
+        init_spec = self.getSpectrumWithNoiseThreshold(slider_time.val,slider_time.val+slider_inttime.val*1e-3,slider_thr.val)
         init_spec = self.getOutputInType(init_spec,mode_out=mode)
         plots = []
         cur_plot = ax_main.plot(self.data['wnAxis'],init_spec,linestyle='-',marker='.')
@@ -87,19 +94,19 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         
         def update(val):
             #Get values
-            mintime = slider_timemin.val
-            maxtime = slider_timemax.val
+            startval = slider_time.val
+            stopval = startval+slider_inttime.val*1e-3
             thrs = slider_thr.val
             #Get the spectrum and update value
-            spectrum = self.getSpectrumWithNoiseThreshold(startTime=mintime*1e-3,stopTime=maxtime*1e-3,threshold=thrs)
+            spectrum = self.getSpectrumWithNoiseThreshold(startTime=startval*1e-3,stopTime=stopval*1e-3,threshold=thrs)
             spectrum = self.getOutputInType(spectrum,mode_out=mode)
 
             plots[-1][0].set_ydata(spectrum)
             
             fig.canvas.draw_idle()
             
-        slider_timemin.on_changed(update)
-        slider_timemax.on_changed(update)
+        slider_time.on_changed(update)
+        slider_inttime.on_changed(update)
         slider_thr.on_changed(update)
         
         def save(val):
@@ -107,14 +114,14 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
             #Store the current spectrum in the dictionnary
             tmp = {}
             tmp['data'] = plots[-1][0].get_ydata()
-            tmp['minTime'] = slider_timemin.val*1e-3
-            tmp['maxTime'] = slider_timemax.val*1e-3
+            tmp['time'] = slider_time.val*1e-3
+            tmp['intTime'] = slider_inttime.val*1e-6
             tmp['specRes'] = slider_smooth.val
             tmp['threshold'] = slider_thr.val
             
             final_plots.append(tmp)
             
-            init_spec = self.getSpectrumWithNoiseThreshold(slider_timemin.val*1e-3,slider_timemax.val*1e-3,slider_thr.val)
+            init_spec = self.getSpectrumWithNoiseThreshold(slider_time.val*1e-3,slider_time.val*1e-3+slider_inttime.val*1e-6,slider_thr.val)
             init_spec = self.getOutputInType(init_spec,mode_out=mode)
             new_plot = ax_main.plot(self.data['wnAxis'],init_spec,linestyle='-',marker='.')
             plots.append(new_plot)
@@ -122,7 +129,7 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         button_save.on_clicked(save)
         
         def smooth(val):
-            self.spectral_smoothing(spectralHalfWidth=np.floor(slider_smooth.val/init_res/2),gaussianConvolve=False, plotOn=False)
+            self.spectral_smoothing(spectralHalfWidth=np.floor(slider_smooth.val/init_res/2),gaussianConvolve=False, plotOn=False,writeParameters=False)
             update(val)
             
         slider_smooth.on_changed(smooth)
@@ -154,7 +161,7 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
             data = np.squeeze(np.array([self.data['wnAxis']]))
             counter = 1
             for dic in final_plots:
-                header += 'Transient {:3.0f} -> time 1: {:1.9e}s - time 2: {:1.9e}s - spectral resolution: {:3.3f}cm-1 - threshold: {:2.3f}\n'.format(counter,dic['minTime'],dic['maxTime'],dic['specRes'],dic['threshold'])
+                header += 'Transient {:3.0f} -> time 1: {:1.9e}s - time 2: {:1.9e}s - spectral resolution: {:3.3f}cm-1 - threshold: {:2.3f}\n'.format(counter,dic['time'],dic['intTime'],dic['specRes'],dic['threshold'])
                 title += '{:<24}'.format(mode+' '+str(counter))
                 data = np.vstack((data,dic['data']))
                 counter+=1
@@ -169,6 +176,7 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
             
             
         def handle_close(event):
+            self.spectral_smoothing(spectralHalfWidth=self.spectralHalfWidth,gaussianConvolve=self.gaussianConvolve,gaussianWNsigma=self.gaussianWNsigma,plotOn=False,writeParameters=False)
             self.running = False
             plt.close(fig.number)
             
@@ -187,13 +195,13 @@ class PostProcessorPlotSpectra(PostProcessorTimeResolved):
         fig = plt.figure()
         ax = plt.subplot(1,1,1)
         ax.set_xlabel('Wavenumber [$\mathrm{cm^{-1}}$]')
-        ax.set_ylabel(mode)
+        ax.set_ylabel(y_ax)
         
         for plot in final_plots:
-            ax.plot(self.data['wnAxis'],plot['data'],label='{:3.3f}ms to {:3.3f}ms'.format(plot['minTime']*1e3,plot['maxTime']*1e3))
+            ax.plot(self.data['wnAxis'],plot['data'],label='{:3.3f} ms to {:3.3f} ms'.format(plot['time']*1e3,plot['time']*1e3+plot['intTime']*1e3))
         ax.legend()
 
-        return final_plots
+        # return final_plots
             
 if __name__=='__main__':
     plt.close('all')

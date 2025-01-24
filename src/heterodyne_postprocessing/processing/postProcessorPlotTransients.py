@@ -58,8 +58,12 @@ class PostProcessorPlotTransient(PostProcessorPlotSpectra):
         init_time_res = np.mean(np.abs(np.gradient(self.data['timeAxis'])))
         
         #Definition of the different objects
-        slider_wnmin = Slider(ax_wnmin,'Wavenumber 1 [$\mathrm{cm^{-1}}$]',np.min(self.data['wnAxis']),np.max(self.data['wnAxis']),valinit=1/3*np.max(self.data['wnAxis']),valstep=init_wn_res/10,valfmt='%3.3f$\mathrm{cm^{-1}}$')
-        slider_wnmax = Slider(ax_wnmax,'Wavenumber 2 [$\mathrm{cm^{-1}}$]',np.min(self.data['wnAxis']),np.max(self.data['wnAxis']),valinit=2/3*np.max(self.data['wnAxis']),valstep=init_wn_res/10,valfmt='%3.3f$\mathrm{cm^{-1}}$')
+        # slider_wnmin = Slider(ax_wnmin,'Wavenumber 1 [$\mathrm{cm^{-1}}$]',np.min(self.data['wnAxis']),np.max(self.data['wnAxis']),valinit=1/3*np.max(self.data['wnAxis']),valstep=init_wn_res/10,valfmt='%3.3f$\mathrm{cm^{-1}}$')
+        # slider_wnmax = Slider(ax_wnmax,'Wavenumber 2 [$\mathrm{cm^{-1}}$]',np.min(self.data['wnAxis']),np.max(self.data['wnAxis']),valinit=2/3*np.max(self.data['wnAxis']),valstep=init_wn_res/10,valfmt='%3.3f$\mathrm{cm^{-1}}$')
+
+        slider_wnstart = Slider(ax_wnmin,'Wavenumber start [$\mathrm{cm^{-1}}$]',np.min(self.data['wnAxis']),np.max(self.data['wnAxis']),valinit=(np.max(self.data['wnAxis'])+np.min(self.data['wnAxis']))/2,valstep=init_wn_res/10,valfmt='%3.0f $\mathrm{cm^{-1}}$')
+        slider_wnint = Slider(ax_wnmax,'WN integration [$\mathrm{cm^{-1}}$]',0, 20, valinit = 2,valstep=init_wn_res/10,valfmt='%3.0f $\mathrm{cm^{-1}}$')
+ 
         slider_interleave= Slider(ax_interleave,'Smoothing',1,8,valinit=1,valstep=1)
         if logscale:
             slider_timestep = Slider(ax_smooth,'TimeSteps',0,100,valstep=1,valinit=40,valfmt='%3.0f')
@@ -76,12 +80,12 @@ class PostProcessorPlotTransient(PostProcessorPlotSpectra):
         
         #Definition of the plots
         if logscale:
-            init_spec,time = self.getTransientWithLogTime(slider_wnmin.val,slider_wnmax.val,slider_timestep.val,slider_interleave.val)
+            init_spec,time = self.getTransientWithLogTime(slider_wnstart.val,slider_wnstart.val+slider_wnint.val,slider_timestep.val,slider_interleave.val)
             init_spec = self.getOutputInType(init_spec,mode_out=mode)
             cur_plot = ax_main.semilogx(time*1e3,init_spec,linestyle='-',marker='.')
             plots.append(cur_plot)
         else:
-            init_spec,time = self.getTransientWithLinTime(slider_wnmin.val,slider_wnmax.val,slider_timestep.val,slider_interleave.val)#,slider_timestep.val,slider_interleave.val)
+            init_spec,time = self.getTransientWithLinTime(slider_wnstart.val,slider_wnstart.val+slider_wnint.val,slider_timestep.val,slider_interleave.val)#,slider_timestep.val,slider_interleave.val)
             init_spec = self.getOutputInType(init_spec,mode_out=mode)
             cur_plot = ax_main.plot(time*1e3,init_spec,linestyle='-',marker='.')
             plots.append(cur_plot)
@@ -95,8 +99,8 @@ class PostProcessorPlotTransient(PostProcessorPlotSpectra):
         
         def update(val):
             #Get values
-            minwn = slider_wnmin.val
-            maxwn = slider_wnmax.val
+            minwn = slider_wnstart.val
+            maxwn = slider_wnstart.val+slider_wnint.val
             step = int(slider_timestep.val)
             interleave = int(slider_interleave.val)
             #Get the spectrum and update value
@@ -115,8 +119,8 @@ class PostProcessorPlotTransient(PostProcessorPlotSpectra):
             
             fig.canvas.draw_idle()
             
-        slider_wnmin.on_changed(update)
-        slider_wnmax.on_changed(update)
+        slider_wnstart.on_changed(update)
+        slider_wnint.on_changed(update)
         slider_timestep.on_changed(update)
         slider_interleave.on_changed(update)
         
@@ -125,20 +129,20 @@ class PostProcessorPlotTransient(PostProcessorPlotSpectra):
             #Store the current spectrum in the dictionnary
             tmp = {}
             tmp['data'] = plots[-1][0].get_ydata()
-            tmp['minWn'] = slider_wnmin.val
-            tmp['maxWn'] = slider_wnmax.val
+            tmp['minWn'] = slider_wnstart.val
+            tmp['maxWn'] = slider_wnint.val
             tmp['time'] = plots[-1][0].get_xdata()/1e3
             tmp['timeRes'] = np.abs(np.mean(np.gradient(tmp['time'])))*slider_interleave.val
             
             final_plots.append(tmp)
             
             if logscale:
-                init_spec,time = self.getTransientWithLogTime(slider_wnmin.val,slider_wnmax.val,slider_timestep.val,slider_interleave.val)
+                init_spec,time = self.getTransientWithLogTime(slider_wnstart.val,slider_wnstart.val+slider_wnint.val,slider_timestep.val,slider_interleave.val)
                 init_spec = self.getOutputInType(init_spec,mode_out=mode)
                 cur_plot = ax_main.semilogx(time*1e3,init_spec,linestyle='-',marker='.')
                 plots.append(cur_plot)
             else:
-                init_spec,time = self.getTransientWithLinTime(slider_wnmin.val,slider_wnmax.val,slider_timestep.val,slider_interleave.val)#,slider_timestep.val,slider_interleave.val)
+                init_spec,time = self.getTransientWithLinTime(slider_wnstart.val,slider_wnstart.val+slider_wnint.val,slider_timestep.val,slider_interleave.val)#,slider_timestep.val,slider_interleave.val)
                 init_spec = self.getOutputInType(init_spec,mode_out=mode)
                 new_plot = ax_main.plot(time*1e3,init_spec,linestyle='-',marker='.')
                 plots.append(new_plot)

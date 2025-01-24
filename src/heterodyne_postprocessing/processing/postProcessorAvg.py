@@ -20,7 +20,7 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         
         
         
-    def acquisition_average(self,startIndx=None,stopIndx=None,plotOn=False):
+    def acquisition_average(self, startIndx=None, stopIndx=None, plotOn=False):
         """
         Function to average acquisitions together. Saves the data under 
         proc.data_name+'AvgOfFiles'.
@@ -28,6 +28,8 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         Input   :   startIndx(int) the first acqusition to take
                     stopIndx(int) the last acquisition to take
                     plotOnt(bool) boolean to plot or not data before/after
+                    ASC_robust(bool) set to True if there is suspicion that path length changes occurred between
+                    background and sample measurements.
         """
         if startIndx is None:
             startIndx = 0
@@ -35,11 +37,11 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
             stopIndx = self.data['numAcq']
         else:
             stopIndx = stopIndx+1
-            
+
         tmp_avg = self.averageConfiguration(startIndx, stopIndx)
-        
-        std_mean, stdIsAbsolute = self.std_average(startIndx=startIndx,stopIndx=stopIndx)
-        
+
+        std_mean, stdIsAbsolute = self.std_average(startIndx=startIndx, stopIndx=stopIndx)
+
         if stdIsAbsolute:
             std_mean = std_mean/self.complexToReal(tmp_avg)
 
@@ -48,20 +50,50 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         self.last_data_type = 'AvgOfFiles'
         
         if plotOn:
-            fig,ax = plt.subplots()
+            if self.ASC_phase_drift_correction:
+                fig, ax = plt.subplots()
+            else:
+                fig, axs = plt.subplots(2, 1)
+                ax = axs[0]
+                ax_phase = axs[1]
+
             if self.is_timeresolved():
-                ax.plot(self.data['timeAxis']*1e3,self.complexToReal(self.data[self.data_name][:,self.config.maxPeakNo,startIndx]),label='First acquisition')
-                ax.plot(self.data['timeAxis']*1e3,self.complexToReal(self.data[self.data_name+'AvgOfFiles'][:,self.config.maxPeakNo]),label='Average of '+str(stopIndx-startIndx)+' files')
+                ax.plot(self.data['timeAxis']*1e3,
+                        self.complexToReal(self.data[self.data_name][:, self.config.maxPeakNo,startIndx]),
+                        label='First acquisition')
+                ax.plot(self.data['timeAxis']*1e3,
+                        self.complexToReal(self.data[self.data_name+'AvgOfFiles'][:,self.config.maxPeakNo]),
+                        label='Average of '+str(stopIndx-startIndx)+' files')
                 ax.set_xlabel('Time [ms]')
                 ax.set_ylabel('Transmission')
+                ax.legend()
+                if not self.ASC_phase_drift_correction:
+                    ax_phase.plot(self.data['timeAxis']*1e3,
+                                  np.angle(self.data[self.data_name][:, self.config.maxPeakNo,startIndx]),
+                                  label='First acquisition')
+                    ax_phase.legend()
+                    ax_phase.set_xlabel('Time [ms]')
+                    ax_phase.set_ylabel('Phase angle of complex transmission / rad')
+
             elif self.is_timeintegrated():
-                ax.plot(self.data['wnAxis'],self.complexToReal(self.data[self.data_name][:,startIndx]),label='First acquisition')
-                ax.plot(self.data['wnAxis'],self.complexToReal(self.data[self.data_name+'AvgOfFiles'][:]),label='Average of '+str(stopIndx-startIndx)+' files')
+                ax.plot(self.data['wnAxis'],
+                        self.complexToReal(self.data[self.data_name][:,startIndx]),
+                        label='First acquisition')
+                ax.plot(self.data['wnAxis'],
+                        self.complexToReal(self.data[self.data_name+'AvgOfFiles'][:]),
+                        label='Average of '+str(stopIndx-startIndx)+' files')
                 ax.set_xlabel('Wavenumber [cm$^{-1}$]')
                 ax.set_ylabel('Transmission')    
-            ax.legend()
+                ax.legend()
+                if not self.ASC_phase_drift_correction:
+                    ax_phase.plot(self.data['wnAxis'], np.angle(self.data[self.data_name][:,startIndx]),
+                            label='First acquisition')
+                    ax_phase.hlines(0, self.data['wnAxis'][0], self.data['wnAxis'][-1], 'r', label='Zero phase')
+                    ax_phase.legend()
+                    ax_phase.set_xlabel('Wavenumber [cm$^{-1}$]')
+                    ax_phase.set_ylabel('Phase angle of complex transmission / rad')
     
-    def std_average(self,startIndx,stopIndx):
+    def std_average(self, startIndx, stopIndx):
         '''
         Method to average the standard deviation via squared sums. As the standard deviation saved in stdPeakAcqs is normalized by its mean value,
         it must first multiplied with its value. Carful, the return is not anymore a relative standard deviation.
@@ -72,7 +104,7 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         if 'stdPeakAcqs' in self.data.keys():            
             if self.is_timeintegrated(): 
                 for i in range(startIndx,stopIndx):
-                    temp+=np.power(self.data['stdPeakAcqs'][:,i]*self.complexToReal(self.data[self.data_name][:,i]),2)    
+                    temp+=np.power(self.data['stdPeakAcqs'][:,i]*self.complexToReal(self.data[self.data_name][:,i]),2)
                 std_mean = np.sqrt(temp)/(stopIndx-startIndx)
                 stdIsAbsolute = True
                 
@@ -92,7 +124,8 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
     def gaussian(self,x, mu, sig):
         return (1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x - mu)/sig, 2.)/2))
     
-    def spectral_smoothing(self,spectralHalfWidth=0,plotOn=False, gaussianConvolve=True, gaussianWNsigma=0.6,threshold=1):
+    def spectral_smoothing(self, spectralHalfWidth=0, plotOn=False, gaussianConvolve=True, gaussianWNsigma=0.6,
+                           threshold=1, writeParameters = True):
         """
         Function to spectrally average the transmission. The smoothing is done by applying a filter on the spectra which
         is weighted by the inverse of the standard deviation of each peaks (i-spectralHalfWidth:i+spectralHalfWidth+1 -> i)
@@ -111,10 +144,14 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         old_avg = np.copy(self.data[self.data_name+'AvgOfFiles'])
         new_avg = np.copy(self.data[self.data_name+'AvgOfFiles'])
         
-        
         if self.is_timeintegrated():
             old_avg_indiv= np.copy(self.data[self.data_name])
             new_avg_indiv = np.copy(self.data[self.data_name])
+            
+        if writeParameters:
+            self.gaussianConvolve=gaussianConvolve
+            self.gaussianWNsigma=gaussianWNsigma
+            self.spectralHalfWidth=spectralHalfWidth    
         
         if gaussianConvolve is False:
             spectralHalfWidth = int(spectralHalfWidth)
@@ -145,8 +182,8 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         if self.is_timeintegrated():
             new_avg_indiv = np.transpose(new_avg_indiv) # create dimension consistency with time-resolved
             self.data.update({self.data_name+'SpectralAvgOfIndividualFiles':new_avg_indiv})
-        
-        
+
+            
         if plotOn:
             fig,ax = plt.subplots()
             if self.is_timeresolved():
@@ -232,25 +269,26 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         
         #if the stadard deviation was not calculated for each acquisition
         else:
-        
             if self.is_timeintegrated():
                 if stop is None: return self.data['stdPeak'][start:]
                 else: return self.data['stdPeak'][start:stop]
             else:
                 if self.config.useBackgroundIntegrationTime: 
-                    backgroundSlices = np.int(np.floor(self.config.backgroundIntegrationSamples/self.config.sampleRate/self.config.interleaveTimeStep))
+                    backgroundSlices = int(np.floor(self.config.backgroundIntegrationSamples/self.config.sampleRate/self.config.interleaveTimeStep))
                 else:
-                    backgroundSlices = np.int(np.floor(self.config.preTriggerSamples/self.config.sampleRate/self.config.interleaveTimeStep))
+                    backgroundSlices = int(np.floor(self.config.preTriggerSamples/self.config.sampleRate/self.config.interleaveTimeStep))
                     
                 if backgroundSlices < 2:
                     return self.data['stdPeak'][start:stop]
+                
+                if not self.data_name+'AvgOfFiles' in self.data.keys():
+                    self.acquisition_average()
                 
                 if stop is None:
                     std = np.std(np.real(self.data[self.data_name+'AvgOfFiles'][0:backgroundSlices,start:]),axis=0)
                 else:
                     std = np.std(np.real(self.data[self.data_name+'AvgOfFiles'][0:backgroundSlices,start:stop]),axis=0)
                 return std   
-  
     
     
     def getOutputInType(self,data_in,mode_out,mode_in='transmission'):
@@ -272,7 +310,7 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
         if mode_in == 'transmission':
             data = data_in
         elif mode_in == 'absorption':
-            data = 1-data_in
+            data = 1-np.array(data)
         elif mode_in == 'absorbance':
             data = np.power(10,-data_in)
         else:
@@ -280,9 +318,12 @@ class PostProcessorAvg(PostProcessorConfigurationMethods):
             
         
         if mode_out =='transmission':
+           
             data_out = data
         elif mode_out == 'absorption':
-            data_out = 1-data
+           
+            data_out = 1-np.array(data)
+           
         elif mode_out == 'absorbance':
             data_out = -np.log10(np.abs(data))
         else:

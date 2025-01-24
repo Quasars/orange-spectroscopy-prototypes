@@ -78,7 +78,8 @@ class WidgetGallery(QDialog):
         irsweep_pixmap = QtGui.QPixmap(os.path.join(sys.path[0],'heterodyne_postprocessing/utilities/Logo.png'))
         self.irsweepLogo = QLabel(self)
         self.irsweepLogo.setPixmap(irsweep_pixmap.scaled(125, 500, QtCore.Qt.KeepAspectRatio))
-        
+        self.setStyleSheet("QPushButton{font-size: 8pt;}")
+        self.setStyleSheet("QLabel{font-size: 8pt;}")
         
         #Create the main layouts
         self.createTopPanel()
@@ -117,7 +118,7 @@ class WidgetGallery(QDialog):
         ### Define the top layer panel
         
         #Create a calibrated file
-        calibration_PushButton = QPushButton("Generate calibration")
+        calibration_PushButton = QPushButton("Make calibration")
         calibration_PushButton.setFixedWidth(125)
         calibration_PushButton.setToolTip('Create a calibration file. First select the calibration measurement, then select the reference file')
         
@@ -137,20 +138,22 @@ class WidgetGallery(QDialog):
         self.calib_PushButton.setToolTip('Load a calibrated file to calibrate the current measurement')
         
         #Labels and textboxes for the acquisition averaging
-        self.no_avg_tickbox = QCheckBox("No averaging")
+        self.no_avg_tickbox = QCheckBox("None")
         self.no_avg_tickbox.setChecked(False)
+        self.no_avg_tickbox.setEnabled(False)
         self.no_avg_tickbox.setToolTip("Do not average long term measurements. For time resolved measurements, instead select the start/stop value you want to keep")
+        
         label1 = QLabel("Start")
         self.textbox_start_idx = QLineEdit()
         self.textbox_start_idx.setFixedWidth(45)
         self.textbox_start_idx.setToolTip('Enter the start of the acquisition averaging range')
-        self.textbox_start_idx.setEnabled(True)
+        self.textbox_start_idx.setEnabled(False)
         #
         label2 = QLabel("Stop")
         self.textbox_stop_idx = QLineEdit()
         self.textbox_stop_idx.setFixedWidth(45)
         self.textbox_stop_idx.setToolTip('Enter the end of the acquisition averaging range')
-        self.textbox_stop_idx.setEnabled(True)
+        self.textbox_stop_idx.setEnabled(False)
         
         #Labels and textboxes for the smoothing
         label3 = QLabel("Sigma ["+self.term('cm','-1')+"]")
@@ -174,6 +177,10 @@ class WidgetGallery(QDialog):
         self.radiobutton_box.setToolTip('Use boxcar spectral averaging')
         self.radiobutton_box.setEnabled(False)
         
+        self.radiobutton_noAvg = QRadioButton("None")
+        self.radiobutton_noAvg.setToolTip('No spectral averaging')
+        self.radiobutton_noAvg.setEnabled(False)
+        
         #Send the entered data to the back-end script
         self.update_PushButton = QPushButton("Update data")
         # self.update_PushButton.setFixedWidth(125)
@@ -192,7 +199,7 @@ class WidgetGallery(QDialog):
         self.infos_PushButton.setEnabled(False)
         
         #Plot the standard deviation peaks
-        self.infos_std_PushButton = QPushButton("Standard deviation")
+        self.infos_std_PushButton = QPushButton("Standard dev.")
         self.infos_std_PushButton.setToolTip('Display the standard deviation as a function of wavenumber')
         self.infos_std_PushButton.setEnabled(False)
         
@@ -215,6 +222,7 @@ class WidgetGallery(QDialog):
         self.calib_PushButton.clicked.connect(self.load_calib)
         self.radiobutton_gaussian.clicked.connect(self.set_gaussian_average)
         self.radiobutton_box.clicked.connect(self.set_boxcar_average)
+        self.radiobutton_noAvg.clicked.connect(self.set_boxcar_average) 
         self.update_PushButton.clicked.connect(lambda : self.post_proc_thread('averaging'))
         quit_PushButton.clicked.connect(QCoreApplication.instance().quit) #rough fix to quit
         self.export_data_PushButton.clicked.connect(self.export_data_to_csv)
@@ -262,6 +270,7 @@ class WidgetGallery(QDialog):
         
         grid3.addWidget(self.radiobutton_gaussian, 0, 5)
         grid3.addWidget(self.radiobutton_box, 1, 5)
+        grid3.addWidget(self.radiobutton_noAvg, 2, 5)
         grid3.addWidget(label3, 0, 6)
         grid3.addWidget(self.textbox_sigma, 0, 7)
         grid3.addWidget(label4, 1, 6)
@@ -302,7 +311,7 @@ class WidgetGallery(QDialog):
         plot_update_PushButton.setMaximumWidth(75)
         plot_update_PushButton.setToolTip('Plot with the current parameters.')
         color_scheme_label = QLabel("Color scheme")
-        
+
         if panel_type=='spectra':
             self.times_to_plot_spec_lb = QLabel()
             self.times_to_plot_spec_lb.setText("Select times")
@@ -331,6 +340,7 @@ class WidgetGallery(QDialog):
             self.spec_color_scheme_cb.setToolTip('Change the color scheme of the plot. See the matplotlib documentation on colormaps for an overview')
             self.plotspec_export_PushButton = QPushButton('Export')
             self.plotspec_export_PushButton.setToolTip('Export the currently plotted trace(s) to a csv file')
+            self.plotspec_export_PushButton.setEnabled(False)
             
             #Make a popup copy of the actual plot in the figure
             self.pop_spectra_plot_PushButton = QPushButton("Pop out")
@@ -362,6 +372,7 @@ class WidgetGallery(QDialog):
             self.kin_color_scheme_cb.addItems(self.color_scheme_list)
             self.kin_color_scheme_cb.setToolTip('Change the color scheme of the plot. See the matplotlib documentation on colormaps for an overview.')
             self.kinplot_export_PushButton = QPushButton('Export')
+            self.kinplot_export_PushButton.setEnabled(False)
             
             #Make a popup copy of the actual plot in the figure
             self.pop_kin_plot_PushButton = QPushButton("Pop out")
@@ -458,24 +469,23 @@ class WidgetGallery(QDialog):
             """
             #Get the parameters
             if not(self.textbox_start_idx.text() == ""):
-                self.start_acq = int(self.textbox_start_idx.text())
+                self.start_acq = int(self.textbox_start_idx.text())-1
             if not(self.textbox_stop_idx.text() == ""):
-                self.stop_acq = int(self.textbox_stop_idx.text())
+                self.stop_acq = int(self.textbox_stop_idx.text())-1
                 
             try:
-                if self.radiobutton_gaussian.isChecked():
-                    self.gaussianWNsigma = float(self.textbox_sigma.text())
-                elif self.radiobutton_box.isChecked():
-                    self.spectralHalfWidth = float(self.textbox_halfwidth.text())
-                
                 ### Averaging and smoothing
                 self.proc.acquisition_average(startIndx = self.start_acq, stopIndx = self.stop_acq,plotOn=False)
-                #
+                
                 if self.radiobutton_gaussian.isChecked():
+                    self.gaussianWNsigma = float(self.textbox_sigma.text())
                     self.proc.spectral_smoothing(gaussianConvolve=self.gaussianConvolve, gaussianWNsigma=self.gaussianWNsigma, plotOn=False, threshold=1)
                 elif self.radiobutton_box.isChecked():
+                    self.spectralHalfWidth = float(self.textbox_halfwidth.text())
                     self.proc.spectral_smoothing(gaussianConvolve=self.gaussianConvolve, spectralHalfWidth=self.spectralHalfWidth, plotOn=False, threshold=1)
-                
+                elif self.radiobutton_noAvg.isChecked():
+                    self.proc.spectral_smoothing(gaussianConvolve=False, spectralHalfWidth=0, plotOn=False, threshold=1)
+                    
             except ValueError:
                 msg2 = QMessageBox()
                 msg2.setIcon(QMessageBox.Information)
@@ -486,23 +496,32 @@ class WidgetGallery(QDialog):
             
             self.export_cb.clear()
             if self.proc.is_timeintegrated():
-                self.export_cb.addItems(["Spectrally averaged data","Averaged data","Unprocessed data"])
+                self.export_cb.addItems(["Spectral avg (abs.)","Spectral avg (transm.)","Full avg (abs.)","Full avg (transm.)","Unprocessed (abs.)","Unprocessed (transm.)"])
             elif self.proc.is_timeresolved():
-                self.export_cb.addItems(["Averaged data","Unprocessed data"])
+                self.export_cb.addItems(["Averaged (abs.)","Averaged (transm.)","Unprocessed (abs.)","Unprocessed (transm.)","Spectral avg. (transm.)", "Spectral avg. (abs.)"])
             self.export_cb.setEnabled(True)
             self.export_data_PushButton.setEnabled(True)
+            self.pop_spectra_plot_PushButton.setEnabled(True)
+            self.pop_kin_plot_PushButton.setEnabled(True)
+            # self.plot_update_PushButton.setEnabled(True)
+            self.plotspec_export_PushButton.setEnabled(True)
+            self.kinplot_export_PushButton.setEnabled(True)
             
     ###
+        
+
     
     def calibrate_a_file(self):
         """
             Method to create a calibrated file from a reference matrice
         """
-        file1, state1 = QFileDialog.getOpenFileName(self, "h5 files (*.h5)")
+        
+        file1, state1 = QFileDialog.getOpenFileName(self, "Open the file to be calibrated (*.h5)")
+        # QFileDialog.setLabelText(state1, 'DEF')
         if state1 and file1[-3:]==".h5":
             calibration_name = file1
             
-        file2, state2 = QFileDialog.getOpenFileName(self, "h5 files (*.h5)")
+        file2, state2 = QFileDialog.getOpenFileName(self, "Open the reference file (*.mat)")
         if state2 and file2[-4:]==".mat":
             reference_name = file2
             calibProc = PostProcessor()
@@ -584,16 +603,25 @@ class WidgetGallery(QDialog):
         layout.addWidget(toolbar)
         self.stdGraph.setLayout(layout)
         stdPeaksGraph.axes.clear()
+        
+        # plot main graph
+        stdPeaksGraph.axes.plot(self.proc.data['wnAxis'],self.proc.getStdAxis(),label=('$\sigma$ of mean (all acq.)'),linewidth=2,color='red')
+        title = 'Standard deviation'
+        
+        # plot individual acquisitions, if they exist
         if 'stdPeakAcqs' in self.proc.data.keys():
-            for i in range(int(self.proc.config.numSamp)):
-                stdPeaksGraph.axes.plot(self.proc.data['wnAxis'],self.proc.data['stdPeakAcqs'][:,i],label=('acq. '+ str(i)),linewidth=1)
-        try:        
-            stdPeaksGraph.axes.plot(self.proc.data['wnAxis'],self.proc.getStdAxis(),label=('std average'),linewidth=2,color='red')
-        except: #this ugly fix is only used for old files not having stdPeak for each acquisition
-            stdPeaksGraph.axes.plot(self.proc.data['wnAxis'],self.proc.data['stdPeak'],label=('std average'),linewidth=2,color='red')
-        stdPeaksGraph.axes.set_xlabel('Wavenumbers')
-        stdPeaksGraph.axes.set_ylabel('Standard deviation')
-        stdPeaksGraph.axes.legend()
+            if self.proc.config.numSamp > 10: 
+                numplot = 10
+                title = 'Standard deviations of the first 10 measurements'
+            else:
+                numplot = int(self.proc.config.numSamp)
+            for i in range(numplot):
+                stdPeaksGraph.axes.plot(self.proc.data['wnAxis'],self.proc.data['stdPeakAcqs'][:,i],label=('$\sigma$ of acq. '+ str(i+1)),linewidth=1)    
+            stdPeaksGraph.axes.legend()
+
+        stdPeaksGraph.axes.set_xlabel('Wavenumber [cm$^{-1}$]')
+        stdPeaksGraph.axes.set_ylabel('$\sigma$')
+        stdPeaksGraph.axes.set_title(title)
         stdPeaksGraph.fig.tight_layout()
         stdPeaksGraph.draw()
         self.stdGraph.show()
@@ -610,7 +638,7 @@ class WidgetGallery(QDialog):
                 with open(self.proc.config.filename[:-18]+'_spectra_export_'+str(self.nbr_exported_plots)+'.csv', 'w', newline='') as exptData:
                     wr = csv.writer(exptData, dialect='excel', quoting=csv.QUOTE_NONE)
                     wnAxis=np.squeeze(np.array((self.spectra_canvas.axes.lines[0].get_xdata())))
-                    wr.writerow(wnAxis)
+                    wr.writerow(np.insert(wnAxis,0,0))
                     for i,line in enumerate(self.spectra_canvas.axes.lines):
                         to_export = np.array(line.get_ydata())
                         to_export = np.insert(to_export,0,self.plot_spectra_at_time[i])
@@ -623,7 +651,7 @@ class WidgetGallery(QDialog):
                 with open(self.proc.config.filename[:-18]+'_kinetics_export_'+str(self.nbr_exported_plots)+'.csv', 'w', newline='') as exptData:
                     wr = csv.writer(exptData, dialect='excel', quoting=csv.QUOTE_NONE)
                     timeAxis=np.squeeze(np.array((self.kin_canvas.axes.lines[0].get_xdata())))
-                    wr.writerow(timeAxis)
+                    wr.writerow(np.insert(timeAxis,0,0))
                     for i,line in enumerate(self.kin_canvas.axes.lines):
                         to_export = np.array(line.get_ydata())
                         to_export = np.insert(to_export,0,self.plot_kin_at_wn[i])
@@ -637,23 +665,43 @@ class WidgetGallery(QDialog):
     def export_data_to_csv(self):
         """
             Method to export the selected data to csv
+            This doesn't work correctly for all use cases since ASC/PSC are not considered
+            Recommend to create a getter function that does the right thing for all cases
         """
         if self.proc.is_timeintegrated():
-            if self.export_cb.currentText()=="Unprocessed data":
-                self.data_to_csv_export=self.proc.data['transmission']
-            elif self.export_cb.currentText()=="Averaged data":
-                self.data_to_csv_export=self.proc.data['transmissionSpectralAvgOfFiles']
-            elif self.export_cb.currentText()=="Spectrally averaged data":
-                self.data_to_csv_export=self.proc.data['transmissionSpectralAvgOfIndividualFiles']
-                
+            if self.export_cb.currentText()=="Unprocessed (abs.)":
+                self.data_to_csv_export = -np.log10(np.abs(self.proc.data['transmission']))
+            elif self.export_cb.currentText()=="Full avg (abs.)":
+                self.data_to_csv_export = -np.log10(np.abs(self.proc.data['transmissionSpectralAvgOfFiles']))
+            elif self.export_cb.currentText()=="Spectral avg (abs.)":
+                self.data_to_csv_export = -np.log10(np.abs(self.proc.data['transmissionSpectralAvgOfIndividualFiles']))
+
+            if self.export_cb.currentText()=="Unprocessed (transm.)":
+                self.data_to_csv_export = np.abs(self.proc.data['transmission'])
+            elif self.export_cb.currentText()=="Full avg (transm.)":
+                self.data_to_csv_export = np.abs(self.proc.data['transmissionSpectralAvgOfFiles'])
+            elif self.export_cb.currentText()=="Spectral avg. (transm.)":
+                self.data_to_csv_export = np.abs(self.proc.data['transmissionSpectralAvgOfIndividualFiles'])
+                                
         elif self.proc.is_timeresolved():
-            if self.export_cb.currentText()=="Unprocessed data":
-                self.data_to_csv_export=self.proc.data['transientTrans']
-            elif self.export_cb.currentText()=="Averaged data":
-                self.data_to_csv_export=self.proc.data['transientTransSpectralAvgOfFiles']
-        
+            if self.export_cb.currentText()=="Unprocessed (abs.)":
+                self.data_to_csv_export=-np.log10(np.abs(self.proc.data['transientTrans']))
+            elif self.export_cb.currentText()=="Averaged (abs.)":
+                self.data_to_csv_export=-np.log10(np.abs(self.proc.data['transientTransAvgOfFiles']))
+            elif self.export_cb.currentText()=="Spectral avg. (abs.)":
+                self.data_to_csv_export=-np.log10(np.abs(self.proc.data['transientTransSpectralAvgOfFiles']))
+
+
+            if self.export_cb.currentText()=="Unprocessed (transm.)":
+                self.data_to_csv_export=np.abs(self.proc.data['transientTrans'])
+            elif self.export_cb.currentText()=="Averaged (transm.)":
+                self.data_to_csv_export=np.abs(self.proc.data['transientTransAvgOfFiles'])
+            elif self.export_cb.currentText()=="Spectral avg. (transm.)":
+                self.data_to_csv_export=np.abs(self.proc.data['transientTransSpectralAvgOfFiles'])
+
         print(self.data_to_csv_export)
         self.proc.csv_export(self.data_to_csv_export)
+
 
     ###
     
@@ -661,7 +709,7 @@ class WidgetGallery(QDialog):
         """
             Method to load the calibrated file of interest
         """
-        file, state = QFileDialog.getOpenFileName(self, "h5 files (*.h5)")
+        file, state = QFileDialog.getOpenFileName(self, "Load the calibrated file (*.h5)")
         if state and file[-3:]==".h5":
             self.calibrated_calibration_name = file
             self.loaded_calib = True
@@ -700,6 +748,7 @@ class WidgetGallery(QDialog):
         """
         
         if not self.file_path_cb.currentText()=='':
+            self.sanitize()
             self.measurement_name = self.folder_path+'//'+self.file_path_cb.currentText()
             self.proc = PostProcessor()
             self.proc.load_configuration(self.measurement_name)
@@ -707,8 +756,8 @@ class WidgetGallery(QDialog):
             if self.proc.is_timeresolved():
                 self.textbox_start_idx.setEnabled(True)
                 self.textbox_stop_idx.setEnabled(True)
-                self.textbox_start_idx.setText(str(0))
-                self.textbox_stop_idx.setText(str(self.proc.config.numSamp-1))
+                self.textbox_start_idx.setText(str(1))
+                self.textbox_stop_idx.setText(str(self.proc.config.numSamp))
                 self.no_avg_tickbox.setEnabled(False) 
                 self.spec_textbox_time_resolution.setEnabled(True)
                 self.kin_textbox_time_resolution.setEnabled(True)
@@ -717,7 +766,7 @@ class WidgetGallery(QDialog):
                 self.time_resol_kin_label.setText("Time resolution [ms]")
                 self.spec_textbox_time_resolution.setText(str(round(self.proc.config.interleaveTimeStep*1e3,3)))
                 self.kin_textbox_time_resolution.setText(str(round(self.proc.config.interleaveTimeStep*1e3,3)))
-                self.textbox_plotspec_times.setText(str(round(self.proc.data['timeAxis'][0]*1e3,3))+','+str(round(self.proc.data['timeAxis'][-1]*1e3,3)))
+                self.textbox_plotspec_times.setText(str(round(self.proc.data['timeAxis'][0]*1e3,3))+', '+str(round(self.proc.data['timeAxis'][-1]*1e3,3)))
             elif self.proc.is_timeintegrated():
                 self.times_to_plot_spec_lb.setText("Select times [s]")
                 self.time_resol_spec_label.setText("Time resolution [s]")
@@ -726,17 +775,58 @@ class WidgetGallery(QDialog):
                 self.no_avg_tickbox.setChecked(True)
                 self.textbox_start_idx.setEnabled(False)
                 self.textbox_stop_idx.setEnabled(False)
-                self.textbox_plotspec_times.setText(str(round(self.proc.data['timeAxis'][0],5))+','+str(round(self.proc.data['timeAxis'][-1],5)))
+                self.textbox_plotspec_times.setText(str(round(self.proc.data['timeAxis'][0],2))+', '+str(round(self.proc.data['timeAxis'][-1],2)))
             self.radiobutton_gaussian.setEnabled(True)
+            self.radiobutton_gaussian.setChecked(True)
+            self.set_gaussian_average()
             self.radiobutton_box.setEnabled(True)
+            self.radiobutton_noAvg.setEnabled(True)
+            self.textbox_halfwidth.setEnabled(True)
+            self.textbox_sigma.setEnabled(True)
             self.infos_PushButton.setEnabled(True)
             self.infos_std_PushButton.setEnabled(True)
             self.textbox_kinplot_wn.setText(str(round(self.proc.data['wnAxis'][self.proc.config.maxPeakNo],1)))
             self.calib_PushButton.setEnabled(True)
+            self.update_PushButton.setEnabled(True)
             
     
     ###
     
+    def sanitize(self):
+        """
+        Reset buttons and clear data.
+
+        """
+        try:
+            del self.proc
+        except:
+            pass
+        self.calib_PushButton.setEnabled(False)
+        self.update_PushButton.setEnabled(False)
+        self.infos_PushButton.setEnabled(False)
+        self.infos_std_PushButton.setEnabled(False)
+        self.export_data_PushButton.setEnabled(False)
+        self.no_avg_tickbox.setChecked(False)
+        self.no_avg_tickbox.setEnabled(False)
+        self.textbox_start_idx.setEnabled(False)
+        self.textbox_stop_idx.setEnabled(False)
+        self.textbox_sigma.setEnabled(False)
+        self.textbox_halfwidth.setEnabled(False)
+        self.radiobutton_gaussian.setEnabled(False)
+        self.radiobutton_box.setEnabled(False)
+        self.radiobutton_noAvg.setEnabled(False)
+        self.kin_textbox_time_resolution.setEnabled(False)
+        self.spec_textbox_time_resolution.setEnabled(False)
+        self.kin_textbox_time_resolution.setEnabled(False)
+        self.export_cb.setEnabled(False)
+
+        self.pop_spectra_plot_PushButton.setEnabled(False)
+        self.pop_kin_plot_PushButton.setEnabled(False)
+        # self.plot_update_PushButton.setEnabled(False)
+        self.plotspec_export_PushButton.setEnabled(False)
+        self.kinplot_export_PushButton.setEnabled(False)
+
+
     def no_avg_change_state(self):
         """
         Changes the state of wether to average the data or not (need to update the data to apply)
@@ -756,8 +846,8 @@ class WidgetGallery(QDialog):
         if not self.no_avg_tickbox.isChecked():
             self.textbox_start_idx.setEnabled(True)
             self.textbox_stop_idx.setEnabled(True)
-            self.textbox_start_idx.setText("0")
-            self.textbox_stop_idx.setText(str(self.proc.config.numSamp-1))
+            self.textbox_start_idx.setText("1")
+            self.textbox_stop_idx.setText(str(self.proc.config.numSamp))
             # self.radiobutton_gaussian.setEnabled(True)
             # self.radiobutton_box.setEnabled(True)
             # self.textbox_halfwidth.setText("7")
@@ -910,7 +1000,10 @@ class WidgetGallery(QDialog):
             if self.checkbox_kinplot_legend.isChecked():
                 handles, labels = kin_gca.get_legend_handles_labels()
                 self.kin_canvas.axes.legend(handles,labels)
-            self.kin_canvas.axes.set_xlabel('Time [ms]')
+            if self.proc.is_timeresolved():
+                self.kin_canvas.axes.set_xlabel('Time [ms]')
+            elif self.proc.is_timeintegrated():
+                self.kin_canvas.axes.set_xlabel('Time [s]')
             self.kin_canvas.fig.tight_layout()
             self.kin_canvas.draw()
             kin_gca.cla() #super important, delete this object

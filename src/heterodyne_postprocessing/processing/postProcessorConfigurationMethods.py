@@ -15,15 +15,36 @@ class PostProcessorConfigurationMethods(PostProcessorHDF5Loader):
     
     def __init__(self):
         super().__init__()
+        self.ASC_phase_drift_correction = False
         
     def complexToReal(self, transmission):
         """
-        convert the complex transmission to the real value in the correct way, depending on the measurement configuration
+        Convert the complex transmission to the real value in the correct way, depending on the measurement
+        configuration.
+        For phase-sensitive configuration (PSC) measurements, the phase of the complex transmission encodes the
+        dispersion of the sample and is therefore non-zero (in general). The real transmission is the magnitude
+        squared of the complex transmission; the square is because only the interrogating comb is attenuated by the
+        sample and transmission is a measure of power (not amplitude) attenuation.
+        For ASC measurements, the phase of the complex transmission is often very close to zero. For the real
+        transmission, one can take the real part (of the complex transmission). The advantage is that if the
+        transmission is close to zero, taking the real part will yield a value that averages to zero.
+        However, if the phase of the complex transmission is non-zero (e.g., because one of the beam path lengths
+        changed between the measurement of the background and sample), then taking the real part of the complex
+        transmission will not yield the correct real transmission. In this case, the magnitude should be taken (
+        not squared, because both combs asre atteunated by the sample).
+
+        The ASC_phase_drift_correction attribute should be set to True in cases where the phase of the complex
+        transmission is significantly different from zero.
+
         input: complex transmission
         output: real transmission
         """
+        ASC_phase_drift_correction = self.ASC_phase_drift_correction
         if self.config.read_ASC_PSC_configuration() == 'ASC':
-            realTransmission = np.real(transmission)
+            if ASC_phase_drift_correction:
+                realTransmission = np.abs(transmission)
+            else:
+                realTransmission = np.real(transmission)
         elif self.config.read_ASC_PSC_configuration() == 'PSC':
             realTransmission = np.square(np.abs(transmission))
            
@@ -37,12 +58,11 @@ class PostProcessorConfigurationMethods(PostProcessorHDF5Loader):
         output: averaged transmission
         """
         if self.config.read_ASC_PSC_configuration() == 'ASC':
-          
             if self.is_timeresolved():
-                #complex average
-                tmp_avg = np.mean(self.data[self.data_name][:,:,startIndx:stopIndx],axis=-1)
+                # complex average
+                tmp_avg = np.mean(self.data[self.data_name][:, :, startIndx:stopIndx], axis=-1)
             elif self.is_timeintegrated():
-                #complex average
+                # complex average
                 tmp_avg = np.mean(self.data[self.data_name][:,startIndx:stopIndx],axis=-1)
                 
         elif self.config.read_ASC_PSC_configuration() == 'PSC':
