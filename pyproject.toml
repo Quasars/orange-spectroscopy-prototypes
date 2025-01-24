@@ -19,7 +19,7 @@ classifiers = [
 ]
 keywords = ["orange3 add-on", "spectroscopy", "prototypes"]
 dependencies = [
-    "orange-spectroscopy>=0.7.2",
+    "orange-spectroscopy>=0.8.1",
 ]
 
 [project.optional-dependencies]
