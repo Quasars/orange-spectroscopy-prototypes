@@ -57,7 +57,7 @@ protospec = "orangecontrib.protospec"
 html-index = "orangecontrib.protospec.widgets:WIDGET_HELP_PATH"
 
 [tool.setuptools.packages.find]
-include = ["orangecontrib*", "heterodyne_postprocessing"]
+where = ["src"]
 
 [tool.black]
 skip_string_normalization = '1'
