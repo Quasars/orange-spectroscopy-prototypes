@@ -1,0 +1,54 @@
+name: Test
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macOS-latest, windows-latest]
+        python-version: ['3.10', '3.11']
+        tox_env: [orange-released]
+        pyqt: ['5.15.*', '6.7.*']
+        experimental: [false]
+        include:
+          - os: windows-latest
+            python-version: '3.10'
+            tox_env: orange-oldest
+            pyqt: '5.15.*'
+            experimental: false
+          - os: macOS-latest
+            python-version: '3.10'
+            tox_env: orange-oldest
+            pyqt: '5.15.*'
+            experimental: false
+          - os: ubuntu-22.04
+            python-version: '3.10'
+            tox_env: orange-oldest
+            pyqt: '5.15.*'
+            experimental: false
+
+          - os: windows-latest
+            python-version: '3.12'
+            tox_env: orange-latest
+            pyqt: '5.15.*'
+            experimental: false
+          - os: macOS-latest
+            python-version: '3.12'
+            tox_env: orange-latest
+            pyqt: '5.15.*'
+            experimental: false
+          - os: ubuntu-24.04
+            python-version: '3.12'
+            tox_env: orange-latest
+            pyqt: '5.15.*'
+            experimental: false
+    uses: biolab/orange-ci-cd/.github/workflows/test-job.yml@master
+    with:
+      os: ${{ matrix.os }}
+      python-version: ${{ matrix.python-version }}
+      tox_env: ${{ matrix.tox_env }}
+      pyqt: ${{ matrix.pyqt }}
+      experimental: ${{ matrix.experimental }}
