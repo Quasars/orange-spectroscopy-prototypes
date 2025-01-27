@@ -8,9 +8,9 @@ description = 'Prototype widgets for orange-spectroscopy add-on'
 authors = [
     { name="Stuart Read", email="stuart.read@lightsource.ca"}
 ]
-version = "2024.11.19"
+version = "2025.1.23"
 readme = {file = "README.pypi", content-type = "text/markdown"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -19,7 +19,7 @@ classifiers = [
 ]
 keywords = ["orange3 add-on", "spectroscopy", "prototypes"]
 dependencies = [
-    "orange-spectroscopy>=0.7.2",
+    "orange-spectroscopy>=0.8.1",
 ]
 
 [project.optional-dependencies]
@@ -57,10 +57,11 @@ protospec = "orangecontrib.protospec"
 html-index = "orangecontrib.protospec.widgets:WIDGET_HELP_PATH"
 
 [tool.setuptools.packages.find]
-include = ["orangecontrib*"]
+where = ["src"]
 
 [tool.black]
 skip_string_normalization = '1'
+force-exclude = '''.*heterodyne_postprocessing.*'''
 
 [tool.flake8]
 # Black compatibility
@@ -74,3 +75,4 @@ extend-ignore = [
     'E501',
 ]
 extend-select = ['B590']
+exclude = ['heterodyne_postprocessing']

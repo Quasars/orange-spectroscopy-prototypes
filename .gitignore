@@ -1,7 +1,7 @@
 # Build files
 build
 dist
-*.egg-info/*
+*.egg-info/
 *.so
 *.la
 *.o
@@ -27,6 +27,9 @@ htmlcov/*
 
 # check_pylint_diff
 .pylint_cache
+
+# Temporary test data
+temp-testdata
 
 # venv
 venv
