@@ -271,10 +271,10 @@ class Configuration(HDF5Class):
             with h5py.File(self.filename, 'r') as f:
                 # Get the version to know how to load stuff
                 try:
-                    self.version = np.string_(f['info'].attrs['SoftwareVersion'][0]).decode()
+                    self.version = np.bytes_(f['info'].attrs['SoftwareVersion'][0]).decode()
                 except:
                     try:
-                        self.version = np.string_(f['info'].attrs['Version'][0]).decode()
+                        self.version = np.bytes_(f['info'].attrs['Version'][0]).decode()
                     except:
                         raise RuntimeError('in Configuration.load_configuration : no version metadata found')
                 self.version = tuple(map(int, (self.version.split("."))))
@@ -305,8 +305,8 @@ class Configuration(HDF5Class):
             info = f['info']
 
             # General evaluation
-            self.processor = np.string_(info.attrs['Processor'][0]).decode()
-            self.moduleID = np.string_(info.attrs['ModuleID'][0]).decode()
+            self.processor = np.bytes_(info.attrs['Processor'][0]).decode()
+            self.moduleID = np.bytes_(info.attrs['ModuleID'][0]).decode()
             self.dataProcessing = info.attrs['DataProcessing'][0]
 
             # Acquisition evaluation parameters
@@ -398,8 +398,8 @@ class Configuration(HDF5Class):
                 "in Configuration.read_from_h5_v4_1_0 : the pow2length and interleave parameters must respect "
                 "2**pow2length>=2**(interleave-1)")
 
-        self.model = np.string_(info.attrs['Model'][0]).decode()
-        self.manufacturer = np.string_(info.attrs['Manufacturer'][0]).decode()
+        self.model = np.bytes_(info.attrs['Model'][0]).decode()
+        self.manufacturer = np.bytes_(info.attrs['Manufacturer'][0]).decode()
         self.H5Version = info.attrs['H5Version'][0]
 
         self._useBackgroundIntegrationTime = info.attrs['UseBackgroundIntegrationTime'][0]
@@ -426,8 +426,8 @@ class Configuration(HDF5Class):
                 "in Configuration.read_from_h5_v4_1_0 : the pow2length and interleave parameters must respect "
                 "2**pow2length>=2**(interleave-1)")
 
-        self.model = np.string_(info.attrs['Model'][0]).decode()
-        self.manufacturer = np.string_(info.attrs['Manufacturer'][0]).decode()
+        self.model = np.bytes_(info.attrs['Model'][0]).decode()
+        self.manufacturer = np.bytes_(info.attrs['Manufacturer'][0]).decode()
         self.H5Version = info.attrs['H5Version'][0]
 
         self._useBackgroundIntegrationTime = info.attrs['UseBackgroundIntegrationTime'][0]
