@@ -31,13 +31,10 @@ doc = [
 test = [
     "pytest",
     "coverage",
-    "flake8",
-    "flake8-bugbear",
-    "flake8-pyproject",
-    "black",
 ]
 dev = [
     "pre-commit",
+    "ruff",
 ]
 
 [project.urls]
@@ -59,30 +56,12 @@ html-index = "orangecontrib.protospec.widgets:WIDGET_HELP_PATH"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.black]
-skip_string_normalization = '1'
-force-exclude = '''.*heterodyne_postprocessing.*'''
-
-[tool.flake8]
-# Black compatibility
-max-line-length = 88
-extend-ignore = [
-    # See https://github.com/PyCQA/pycodestyle/issues/373
-    'E203',
-    # Ignore this since we use PyQt5 basically everywhere.
-    'N802',
-    # https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html#line-length
-    'E501',
-]
-extend-select = ['B590']
-exclude = ['heterodyne_postprocessing']
-
 [tool.ruff]
 exclude = ['heterodyne_postprocessing']
 force-exclude = true
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "B"]
+select = ["E4", "E7", "E9", "F", "B", "UP"]
 
 [tool.ruff.format]
 quote-style = "preserve"
