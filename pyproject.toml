@@ -79,6 +79,10 @@ exclude = ['heterodyne_postprocessing']
 
 [tool.ruff]
 exclude = ['heterodyne_postprocessing']
+force-exclude = true
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "B"]
+
+[tool.ruff.format]
+quote-style = "preserve"

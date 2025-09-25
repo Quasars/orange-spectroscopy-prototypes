@@ -1,3 +1,6 @@
 [lint]
 # Allow the use of in_data in these scripts
 ignore = ["F821"]
+
+[format]
+exclude = ['*']
