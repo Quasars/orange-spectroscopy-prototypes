@@ -38,7 +38,7 @@ class HDF5Reader(FileFormat):
                 if f'{sub}_args' in d
                 else ['{}'] * len(subdomain)
             )
-            for attr, args in zip(subdomain, subdomain_args):
+            for attr, args in zip(subdomain, subdomain_args, strict=False):
                 yield attr[0], attr[1], json.loads(args)
 
         def make_var(name, header, args):
@@ -235,7 +235,7 @@ class IRisF1HDF5Reader(FileFormat):
         data = np.asarray(data, dtype=np.float64)  # Orange assumes X to be float64
         features = []
         for i, f in enumerate(domvals):
-            var = Orange.data.ContinuousVariable.make("%f" % f)
+            var = Orange.data.ContinuousVariable.make("%f" % f)  # noqa: UP031
             for k, v in var_attr_d.items():
                 var.attributes[k] = v[i]
             features.append(var)
