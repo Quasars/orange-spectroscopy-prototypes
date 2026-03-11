@@ -1,4 +1,5 @@
 import json
+import pickle
 
 from os import path
 
@@ -15,6 +16,7 @@ from Orange.data import (
     Table,
 )
 from Orange.data.io import FileFormat
+from Orange.data.io_base import PICKLE_PROTOCOL
 
 from Orange.version import short_version as ORANGE_VERSION  # noqa N812
 from orangecontrib.spectroscopy.io import HDF5MetaReader
@@ -38,7 +40,7 @@ class HDF5Reader(FileFormat):
                 if f'{sub}_args' in d
                 else ['{}'] * len(subdomain)
             )
-            for attr, args in zip(subdomain, subdomain_args, strict=False):
+            for attr, args in zip(subdomain, subdomain_args):  # noqa B905
                 yield attr[0], attr[1], json.loads(args)
 
         def make_var(name, header, args):
@@ -140,6 +142,48 @@ class HDF5Reader(FileFormat):
                         col_data[pd.isnull(col_data)] = ""
                     f.create_dataset(f'metas/{i}', data=col_data, dtype=col_type)
         cls.write_table_metadata(filename, data)
+
+    @classmethod
+    def write_table_metadata(cls, filename, data):
+        dump_dict = {}
+        for key, value in data.attributes.items():
+            if isinstance(value, str):
+                dump_dict[key] = value
+            else:
+                try:
+                    dump_dict[key] = json.dumps(value)
+                except TypeError:
+                    # value is not JSON serializable, fall back to pickle
+                    dump_dict[key] = pickle.dumps(value, protocol=PICKLE_PROTOCOL).hex()
+
+        with h5py.File(filename, 'r+') as f:
+            metadata_group = f.require_group('metadata')
+            str_dtype = h5py.string_dtype()
+            for key, value in dump_dict.items():
+                metadata_group.create_dataset(key, data=value, dtype=str_dtype)
+
+    @classmethod
+    def set_table_metadata(cls, filename, data):
+        with h5py.File(filename, 'r') as f:
+            if 'metadata' in f:
+                metadata_group = f['metadata']
+                for key in metadata_group:
+                    value = metadata_group[key][()]
+                    if isinstance(value, bytes):
+                        value = value.decode('utf-8')
+                    if value.startswith('{') or value.startswith('['):
+                        try:
+                            value = json.loads(value)
+                        except json.JSONDecodeError:
+                            pass
+                    elif value.startswith(f"80{PICKLE_PROTOCOL:02x}"):
+                        try:
+                            value = pickle.loads(bytes.fromhex(value))
+                        except (pickle.UnpicklingError, ValueError):
+                            pass
+                    data.attributes[key] = value
+            else:
+                super().set_table_metadata(filename, data)
 
 
 class IRisF1HDF5Reader(FileFormat):
